@@ -62,6 +62,10 @@ Azioni sulle schede:
 ## 4. Design
 
 - Minimalismo e tipografia curata sono il centro del progetto.
+- **Stile di riferimento: sistema operativo Apple (iOS/macOS).** Molto pulito e leggibile:
+  - font di sistema (SF Pro tramite `-apple-system` / `system-ui`, con alternative equivalenti sugli altri dispositivi);
+  - superfici chiare e grigi leggeri, angoli morbidi, ombre quasi assenti;
+  - la gerarchia nasce dalla tipografia, non da bordi o decorazioni.
 - Scala tipografica definita e rispettata, con pochi pesi e una gerarchia chiara.
 - Palette ridotta: il colore compare solo dove ha un significato (etichette, scadenze).
 - Tema chiaro e scuro.
