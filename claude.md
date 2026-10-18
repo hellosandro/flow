@@ -1,0 +1,134 @@
+# FLOW — specifica di progetto
+
+FLOW è un tool online in stile Trello, personale e con meno funzioni. Serve a gestire i progetti con i clienti: ogni progetto ha la sua bacheca.
+
+**Versione attuale: beta personale.** La usa solo il proprietario. La condivisione con i clienti arriva in una fase successiva (vedi sezione 9).
+
+---
+
+## 1. Obiettivo
+
+- Organizzare il lavoro per progetto o cliente con un sistema a colonne.
+- Separare chiaramente cosa devo fare io, cosa aspetto dal cliente e cosa è concluso.
+- Restare minimale: poche funzioni, fatte bene, con grande cura tipografica.
+- Usarlo sia da computer sia da telefono, con i dati sincronizzati tra i due.
+
+## 2. Accesso (beta)
+
+- Un solo utente: il proprietario.
+- Accesso protetto da **una password**, salvata come variabile d'ambiente su Vercel (`FLOW_PASSWORD`).
+- Dopo il login, un cookie di sessione sicuro (httpOnly) mantiene l'accesso per 30 giorni su quel dispositivo.
+- Nessuna registrazione, nessuna email, nessun servizio di autenticazione esterno.
+- Senza login, tutte le pagine e le API rispondono con la schermata di accesso.
+
+## 3. Struttura
+
+### 3.1 Bacheche
+- Più bacheche, una per progetto o cliente.
+- Ogni bacheca ha un titolo modificabile e una data di creazione.
+- Pagina iniziale: elenco delle bacheche.
+
+### 3.2 Colonne
+Ogni bacheca nasce con tre colonne fisse:
+
+1. **Io**: cose che devo fare io.
+2. **Cliente**: cose che aspetto dal cliente.
+3. **Fatto**: cose concluse.
+
+A queste si aggiungono **una o più colonne variabili**:
+- titolo libero e modificabile (esempi: "Stand by", "Perpetue");
+- si possono aggiungere, rinominare, riordinare ed eliminare;
+- le tre colonne fisse non si eliminano. Resta da decidere se il loro titolo è modificabile.
+
+### 3.3 Schede
+Ogni scheda contiene:
+
+- **Titolo** (obbligatorio)
+- **Note**: testo libero
+- **Scadenza**: una data, con evidenza visiva se vicina o passata
+- **Etichette colore**: per cliente, priorità o tipo di lavoro. Ogni bacheca ha il suo set di etichette.
+- **Checklist**: passaggi da spuntare, con l'avanzamento visibile sulla scheda (es. 2/5)
+- **Link**: uno o più link, con titolo opzionale
+
+**Niente allegati.** Non si caricano file: solo link esterni.
+
+Azioni sulle schede:
+- creare, modificare, eliminare;
+- trascinare tra colonne e riordinare dentro la colonna;
+- su telefono, oltre al trascinamento, un comando "Sposta in…" per cambiare colonna.
+
+> Altri dettagli della scheda: **da completare**.
+
+## 4. Design
+
+- Minimalismo e tipografia curata sono il centro del progetto.
+- Scala tipografica definita e rispettata, con pochi pesi e una gerarchia chiara.
+- Palette ridotta: il colore compare solo dove ha un significato (etichette, scadenze).
+- Tema chiaro e scuro.
+- Responsive: deve funzionare bene **sia su computer sia su telefono**. Su telefono le colonne scorrono in orizzontale, una alla volta.
+- Date e scadenze nel fuso orario italiano (Europe/Rome).
+- Interfaccia in italiano.
+
+## 5. Stack
+
+- **Next.js** (App Router, TypeScript)
+- **Vercel**: hosting, piano gratuito Hobby. All'inizio l'indirizzo è `*.vercel.app`, poi passerà a un dominio personale.
+- **Neon Postgres**: database, collegato tramite l'integrazione Vercel Marketplace (Vercel → Storage → Neon). Le variabili di collegamento vengono aggiunte da Vercel in automatico.
+- **Drizzle ORM** per le query e le migrazioni.
+- **@dnd-kit** per il trascinamento.
+- Repository su **GitHub**, collegato a Vercel per la pubblicazione automatica a ogni modifica.
+
+### Perché Neon e non Supabase
+- Sul piano gratuito, Supabase mette in pausa il progetto dopo un periodo di inattività. Per riattivarlo bisogna intervenire a mano.
+- Neon invece spegne il database dopo 5 minuti di inattività e lo **riaccende da solo** alla richiesta successiva. Al primo accesso dopo una pausa c'è solo una breve attesa.
+- Il piano gratuito di Neon offre 1 GB per progetto, più che sufficiente per testo e link.
+
+### Alternative scartate
+- **Solo browser (localStorage)**: nessun servizio esterno, ma i dati restano su un solo dispositivo. Computer e telefono non si sincronizzerebbero.
+- **Vercel Blob con un file JSON**: niente database, ma il piano gratuito include circa 2.000 scritture al mese, e con un salvataggio a ogni modifica è un limite troppo stretto.
+
+## 6. Modello dati
+
+```
+boards          id, titolo, posizione, created_at
+columns         id, board_id, titolo, tipo ('io' | 'cliente' | 'fatto' | 'variabile'), posizione
+labels          id, board_id, nome, colore
+cards           id, column_id, board_id, titolo, note, scadenza (date), posizione, created_at, updated_at
+card_labels     card_id, label_id
+checklist_items id, card_id, testo, completato, posizione
+links           id, card_id, url, titolo, posizione
+```
+
+- La creazione di una bacheca crea anche le tre colonne fisse.
+- L'eliminazione è a cascata: eliminando una bacheca si eliminano le sue colonne, schede, checklist e link.
+- Per l'ordinamento, `posizione` usa numeri frazionari (o stringhe lexorank), così uno spostamento aggiorna una sola riga.
+- Il modello è pensato per aggiungere gli utenti in seguito (sezione 9) senza riscriverlo.
+
+## 7. Fasi
+
+1. **Prototipo visivo** con dati di esempio, per definire tipografia e stile.
+2. **Progetto Next.js** con login a password e database Neon collegato.
+3. **Bacheche, colonne, schede** con tutte le funzioni della sezione 3.
+4. **Pubblicazione** su Vercel.
+5. **Dominio personale** (facoltativo).
+
+## 8. Note per chi sviluppa
+
+- Il proprietario **non è uno sviluppatore**. I passaggi che deve fare lui vanno spiegati in modo semplice, passo per passo: creazione del progetto su Vercel, collegamento di Neon, impostazione di `FLOW_PASSWORD`, dominio.
+- Orari e date sempre nel fuso orario italiano (CET/CEST).
+- Salvataggi immediati e ottimistici: l'interfaccia si aggiorna subito e salva in background. Se il salvataggio non riesce, lo segnala.
+
+## 9. Dopo la beta: condivisione con i clienti
+
+Quando FLOW sarà aperto ai clienti:
+- ogni cliente vede **solo le bacheche a cui è invitato**, e lì può fare tutto;
+- l'accesso avviene via email con link magico, ad esempio con Auth.js e un servizio email come Resend;
+- al database si aggiungono le tabelle `users`, `board_members` e `invites`, e ogni query va filtrata per utente;
+- il proprietario vede tutte le bacheche ed è l'unico che può eliminarle e gestire gli inviti.
+
+## 10. Da decidere
+
+- [ ] Altri dettagli della scheda
+- [ ] Titolo delle colonne fisse modificabile o no
+- [ ] Set di etichette predefinito per le nuove bacheche
+- [ ] Archivio delle schede in "Fatto" dopo un certo tempo, o restano lì
