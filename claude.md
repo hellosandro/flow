@@ -101,6 +101,9 @@ Azioni sulle schede:
 - Scala tipografica definita e rispettata, con pochi pesi e una gerarchia chiara.
 - Palette ridotta: il colore compare solo dove ha un significato (etichette, scadenze).
 - Tema chiaro e scuro.
+- **Due temi grafici**, scelti dalla voce **Tema** in alto a destra nella pagina iniziale (la scelta vale per il singolo dispositivo):
+  - **Sistema**: lo stile Apple descritto sopra.
+  - **Carta**: come un planner stampato. Bianco e nero, linee sottili nere o grigie al posto di riquadri e ombre, titoli in **maiuscolo con spaziatura ampia**, carattere **Geologica** (Google Fonts, con latino esteso, cirillico e greco per eventuali traduzioni). Le schede sono righe separate da una linea sottile; le colonne hanno il titolo sopra una linea nera. Il colore resta solo dove ha un significato (scadenze, pallini delle etichette).
 - Responsive: deve funzionare bene **sia su computer sia su telefono**. Le colonne hanno larghezza fissa (come su Trello) e restano affiancate anche su telefono, dove scorrono in orizzontale. Le schede prendono la larghezza della colonna e l'altezza dal contenuto; i titoli non vengono mai tagliati.
 - Date e scadenze nel fuso orario italiano (Europe/Rome).
 - Interfaccia in italiano.
