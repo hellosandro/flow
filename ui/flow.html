@@ -616,10 +616,15 @@ body.grabbing, body.grabbing * { cursor: grabbing !important; }
 [data-skin="carta"] .col-new .add { border: 0; border-bottom: 1px dashed var(--label-3); justify-content: flex-start; }
 [data-skin="carta"] .home-grid { gap: 28px 24px; }
 /* le bacheche sono riquadri bianchi con il bordo nero: si riconoscono subito come oggetti da aprire */
-[data-skin="carta"] .tile { border-radius: 0; box-shadow: none; background: var(--surface); border: 1px solid var(--rule); padding: 16px 16px 14px; min-height: 104px; }
+[data-skin="carta"] .tile { border-radius: 0; box-shadow: none; background: var(--surface); border: 1px solid var(--rule); padding: 15px 16px; min-height: 104px; }
 [data-skin="carta"] .tile:hover { box-shadow: none; }
 [data-skin="carta"] .tile:hover { background: var(--fill); }
 [data-skin="carta"] .tile h2 { font: 600 13px/1.45 var(--font); text-transform: uppercase; letter-spacing: var(--caps); }
+/* nome al centro del riquadro, come "+ Nuova bacheca"; gli avvisi di scadenza subito sotto */
+[data-skin="carta"] .tile { justify-content: center; align-items: center; text-align: center; gap: 6px; }
+[data-skin="carta"] .tile h2 { padding: 0 30px; }
+[data-skin="carta"] .tile-meta { justify-content: center; min-height: 0; }
+[data-skin="carta"] .tile-meta:empty { display: none; }
 [data-skin="carta"] .tile-new { border: 1px dashed var(--label-3); border-radius: 0; justify-content: center; align-items: center; padding: 16px; font: var(--t-cap); text-transform: uppercase; letter-spacing: var(--caps); }
 [data-skin="carta"] .tile-new:hover { background: none; border-color: var(--rule); color: var(--label); }
 [data-skin="carta"] .sheet, [data-skin="carta"] .menu, [data-skin="carta"] .alert { border-radius: 2px; }
