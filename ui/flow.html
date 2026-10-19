@@ -253,6 +253,14 @@ body.grabbing, body.grabbing * { cursor: grabbing !important; }
 .menu .menu-head { font: var(--t-cap); color: var(--label-2); padding: 8px 12px 4px; margin: 0; }
 .menu .mi { display: flex; align-items: center; gap: 8px; }
 .menu-sep { height: .5px; background: var(--sep); margin: 4px 8px; }
+.card-menu .sub-open small { margin-left: auto; padding-left: 12px; font: var(--t-cap); color: var(--label-3); }
+.card-menu .sub-open svg.i, .card-menu .sub-back svg.i { width: 14px; height: 14px; color: var(--label-3); flex: none; }
+.card-menu .sub-back { font-weight: 600; gap: 6px; }
+.card-menu .sub-back svg.i { color: var(--blue); }
+.swatches { display: flex; gap: 10px; padding: 6px 12px 10px; }
+.menu .sw { width: 26px; height: 26px; padding: 0; border-radius: 50%; background: var(--c); box-shadow: inset 0 0 0 1px rgba(0,0,0,.12); }
+.menu .sw:hover { background: var(--c); transform: scale(1.08); }
+.menu .sw[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--surface), 0 0 0 3.5px var(--label); }
 .grabber { display: none; }
 .btn-text { color: var(--blue); font: var(--t-body); padding: 4px 2px; }
 .btn-text.strong { font-weight: 600; }
@@ -661,6 +669,14 @@ body.grabbing, body.grabbing * { cursor: grabbing !important; }
 [data-skin="carta"] .tile-new { border: 1px dashed var(--label-3); border-radius: 0; justify-content: center; align-items: center; padding: 16px; font: var(--t-cap); text-transform: uppercase; letter-spacing: var(--caps); }
 [data-skin="carta"] .tile-new:hover { background: none; border-color: var(--rule); color: var(--label); }
 [data-skin="carta"] .sheet, [data-skin="carta"] .menu, [data-skin="carta"] .alert { border-radius: 2px; }
+/* scheda aperta: niente bordo nero, intestazione del colore del suo post-it */
+[data-skin="carta"] .sheet { box-shadow: 0 24px 60px rgba(0,0,0,.18), 0 2px 6px rgba(0,0,0,.06); }
+[data-skin="carta"] .sheet .sheet-bar, [data-skin="carta"] .sheet .sheet-head { background: var(--pi); color: var(--pi-ink); }
+[data-skin="carta"] .sheet .sheet-head { border-bottom: 0; }
+[data-skin="carta"] .sheet .f-title { color: var(--pi-ink); }
+[data-skin="carta"] .sheet .bar-actions .bar-btn { color: var(--pi-ink); background: rgba(255,255,255,.35); box-shadow: none; }
+[data-skin="carta"] .sheet .bar-actions .bar-btn:hover { background: rgba(255,255,255,.6); }
+[data-skin="carta"] .sheet .grabber { background: rgba(0,0,0,.18); }
 [data-skin="carta"] .sidenav { background: var(--surface); }
 [data-skin="carta"] .nav-item { border-radius: 0; font: 500 11px/1.3 var(--font); text-transform: uppercase; letter-spacing: .14em; padding: 10px; }
 [data-skin="carta"] .nav-item .nm { letter-spacing: 0; text-transform: none; }
@@ -796,6 +812,7 @@ const ICON = {
   up: '<svg class="i" viewBox="0 0 16 16"><path d="M8 13V3M4 7l4-4 4 4"/></svg>',
   msg: '<svg class="i" viewBox="0 0 16 16"><path d="M3 4.5A1.5 1.5 0 0 1 4.5 3h7A1.5 1.5 0 0 1 13 4.5v5a1.5 1.5 0 0 1-1.5 1.5H7.2L4.5 13v-2a1.5 1.5 0 0 1-1.5-1.5z"/></svg>',
   side: '<svg class="i" viewBox="0 0 16 16"><rect x="2" y="2.75" width="12" height="10.5" rx="2"/><path d="M10 2.75v10.5"/></svg>',
+  chevr: '<svg class="i" viewBox="0 0 16 16"><path d="m6 3 5 5-5 5"/></svg>',
   chevl: '<svg class="i" viewBox="0 0 16 16"><path d="M10 3 5 8l5 5"/></svg>',
   person: '<svg class="i" viewBox="0 0 16 16"><circle cx="8" cy="5.5" r="2.5"/><path d="M3 13.5c.6-2.4 2.6-3.8 5-3.8s4.4 1.4 5 3.8"/></svg>',
   more: '<svg class="i" viewBox="0 0 16 16"><circle cx="3.5" cy="8" r="1.2" fill="currentColor" stroke="none"/><circle cx="8" cy="8" r="1.2" fill="currentColor" stroke="none"/><circle cx="12.5" cy="8" r="1.2" fill="currentColor" stroke="none"/></svg>'
@@ -940,6 +957,9 @@ function dueInfo(due, done) {
   return { cls: '', text: fmtShort(due) };
 }
 
+/* colore del post-it (tema Carta): sempre lo stesso per la stessa scheda */
+const tintOf = c => Number.isInteger(c.color) ? c.color : [...c.id].reduce((n, ch) => n + ch.charCodeAt(0), 0) % 6;
+const TINTS = ['Beige', 'Rosa', 'Azzurro', 'Malva', 'Salvia', 'Pesca'];
 function cardHTML(c, col) {
   /* Un modulo nascosto (spunta tolta) non compare da nessuna parte, nemmeno la sua scadenza */
   const on = k => !c.modules || c.modules.includes(k);
@@ -956,9 +976,7 @@ function cardHTML(c, col) {
   if (full && on('links') && c.links.length) meta.push(`<span aria-label="Link">${ICON.link}${c.links.length}</span>`);
   if (full && c.messages?.length) meta.push(`<span aria-label="Messaggi">${ICON.msg}${c.messages.length}</span>`);
   if (full && on('members') && c.members?.length) meta.push(avatars(c.members));
-  /* colore del post-it (tema Carta): sempre lo stesso per la stessa scheda */
-  const tint = [...c.id].reduce((n, ch) => n + ch.charCodeAt(0), 0) % 6;
-  return `<article class="card" tabindex="0" data-card="${c.id}" style="--pi: var(--pi-${tint})">
+  return `<article class="card" tabindex="0" data-card="${c.id}" style="--pi: var(--pi-${tintOf(c)})">
     ${labs.length ? `<div class="labels">${labs.map(l => `<span class="lab" style="--c:${l.color}">${esc(l.name)}</span>`).join('')}</div>` : ''}
     <h3 class="card-title">${esc(c.title)}</h3>
     ${meta.length ? `<div class="meta">${meta.join('')}</div>` : ''}
@@ -1184,6 +1202,7 @@ function renderSheet(opts = {}) {
   const old = sheet.querySelector('.sheet-panel');
   const scroll = old && old.dataset.panel === ui.tab ? old.scrollTop : 0;
   sheet.className = 'sheet side';
+  sheet.style.setProperty('--pi', `var(--pi-${tintOf(c)})`);
   const secName = { desc: 'Descrizione', msg: 'Messaggi', ...MODULES }[ui.tab];
   const panelInner = `<div class="sheet-panel" data-panel="${ui.tab}" role="tabpanel"><h3 class="sec-title">${secName}</h3>${panelHTML(c)}</div>
     ${ui.tab === 'msg' ? `<form class="composer" id="composer">
@@ -1198,9 +1217,16 @@ function renderSheet(opts = {}) {
       <div class="bar-actions">
         <div class="more-wrap">
           <button class="icon-btn bar-btn" type="button" data-more aria-label="Altre azioni" aria-haspopup="menu" aria-expanded="${ui.menu === 'more'}">${ICON.more}</button>
-          ${ui.menu === 'more' ? `<div class="menu right card-menu" role="menu">
-            <p class="menu-head">Sposta in</p>
+          ${ui.menu === 'move' ? `<div class="menu right card-menu" role="menu">
+            <button type="button" class="mi sub-back" data-submenu="more">${ICON.chevl}Sposta in</button>
+            <div class="menu-sep"></div>
             ${state.columns.map(o => `<button type="button" class="mi" role="menuitemradio" aria-checked="${o.id === c.col}" data-moveto="${o.id}"><span class="mk">${o.id === c.col ? ICON.tick : ''}</span>${esc(o.title)}</button>`).join('')}
+          </div>` : ''}
+          ${ui.menu === 'more' ? `<div class="menu right card-menu" role="menu">
+            <button type="button" class="mi sub-open" data-submenu="move" aria-haspopup="menu"><span class="mk"></span>Sposta in<small>${esc(colOf(c.col)?.title || '')}</small>${ICON.chevr}</button>
+            ${document.documentElement.dataset.skin === 'carta' ? `<div class="menu-sep"></div>
+            <p class="menu-head">Colore</p>
+            <div class="swatches">${TINTS.map((n, i) => `<button type="button" class="sw" style="--c: var(--pi-${i})" data-color="${i}" aria-pressed="${tintOf(c) === i}" aria-label="${n}" title="${n}"></button>`).join('')}</div>` : ''}
             <div class="menu-sep"></div>
             ${MODULES[ui.tab] ? `<button type="button" class="mi danger" data-rmmodule="${ui.tab}"><span class="mk"></span>Elimina ${MODULES[ui.tab].toLowerCase()}</button>` : ''}
             <button type="button" class="mi danger" data-delete><span class="mk"></span>Elimina scheda</button>
@@ -1544,8 +1570,12 @@ sheetEl.addEventListener('click', e => {
   if (t.closest('[data-canceldesc]')) { ui.editDesc = false; renderSheet(); return; }
   const mem = t.closest('[data-member]');
   if (mem) { const m = mem.dataset.member; c.members = c.members.includes(m) ? c.members.filter(x => x !== m) : [...c.members, m]; renderSheet(); return; }
-  if (t.closest('[data-more]')) { ui.menu = ui.menu === 'more' ? null : 'more'; renderSheet(); return; }
+  if (t.closest('[data-more]')) { ui.menu = ui.menu ? null : 'more'; renderSheet(); return; }
+  const sub = t.closest('[data-submenu]');
+  if (sub) { ui.menu = sub.dataset.submenu; renderSheet(); return; }
   if (t.closest('[data-delete]')) { ui.menu = null; ui.confirm = 'card'; renderSheet(); return; }
+  const col = t.closest('[data-color]');
+  if (col) { c.color = +col.dataset.color; renderSheet(); renderBoard(); return; }
   const mv = t.closest('[data-moveto]');
   if (mv) {
     if (mv.dataset.moveto !== c.col) {

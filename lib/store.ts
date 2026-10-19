@@ -6,7 +6,7 @@ import * as t from './schema';
    e la ricompone in lettura: l'interfaccia salva una bacheca intera alla volta. */
 export type UiCard = {
   id: string; col: string; title: string; notes: string; due: string | null;
-  labels: string[]; members: string[]; modules: string[];
+  labels: string[]; members: string[]; modules: string[]; color?: number | null;
   checklist: { id: string; text: string; done: boolean }[];
   links: { id: string; url: string; title: string }[];
   messages: { id: string; me: boolean; name: string; html: string; at: number; edited?: boolean }[];
@@ -55,7 +55,7 @@ export async function loadAll() {
     columns: colsOf(b.id).map(c => ({ id: c.id, title: c.titolo, type: c.tipo })),
     cards: cardsOf(b.id).map(c => ({
       id: c.id, col: c.columnId, title: c.titolo, notes: c.descrizione, due: c.scadenza,
-      modules: c.moduli, createdAt: c.createdAt.getTime(),
+      modules: c.moduli, color: c.colore, createdAt: c.createdAt.getTime(),
       labels: clOf(c.id).map(x => x.labelId),
       members: cmOf(c.id).map(x => x.membro),
       checklist: itemsOf(c.id).map(i => ({ id: i.id, text: i.testo, done: i.completato })),
@@ -88,6 +88,7 @@ export async function saveBoard(id: string, input: UiBoard, posizione: number) {
     await tx.insert(t.cards).values(cs.map((c, i) => ({
       id: c.id, columnId: c.col, boardId: id, titolo: str(c.title, 2000) || 'Senza titolo', descrizione: str(c.notes),
       scadenza: isDay(c.due) ? c.due : null, moduli: arr<string>(c.modules).map(m => str(m, 40)),
+      colore: Number.isInteger(c.color) && c.color! >= 0 && c.color! < 6 ? c.color! : null,
       posizione: i, createdAt: typeof c.createdAt === 'number' ? new Date(c.createdAt) : now, updatedAt: now
     })));
     const cl = cs.flatMap(c => [...new Set(arr<string>(c.labels))].filter(l => labIds.has(l)).map(labelId => ({ cardId: c.id, labelId })));

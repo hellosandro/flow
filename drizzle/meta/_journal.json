@@ -15,6 +15,13 @@
       "when": 1792421053577,
       "tag": "0001_messaggi_modificati",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792425957888,
+      "tag": "0002_colore_schede",
+      "breakpoints": true
     }
   ]
 }

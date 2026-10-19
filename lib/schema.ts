@@ -1,4 +1,4 @@
-import { pgTable, text, real, boolean, date, timestamp, primaryKey, index } from 'drizzle-orm/pg-core';
+import { pgTable, text, real, boolean, date, timestamp, integer, primaryKey, index } from 'drizzle-orm/pg-core';
 
 /* Modello dati della sezione 6 di claude.md. Gli id li genera il client, così l'interfaccia
    può aggiornarsi subito e salvare in background. Eliminando una bacheca si elimina tutto a cascata. */
@@ -35,6 +35,7 @@ export const cards = pgTable('cards', {
   descrizione: text('descrizione').notNull().default(''),
   scadenza: date('scadenza'),
   moduli: text('moduli').array().notNull().default([]),
+  colore: integer('colore'),
   posizione: real('posizione').notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
