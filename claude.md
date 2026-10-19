@@ -46,6 +46,9 @@ Ogni scheda contiene sempre:
 - **Titolo** (obbligatorio)
 - **Descrizione**: testo con formattazione semplice, come su Trello: titolo e sottotitolo, grassetto, corsivo, barrato, sottolineato, elenchi puntati e numerati, link. Niente immagini né file.
 - **Messaggi**: conversazione sulla scheda. Nella beta serve come diario; con la condivisione (sezione 9) diventa la chat con il cliente.
+  - Ogni messaggio mostra in alto, come su Trello, iniziali e **nome di chi scrive** in evidenza, con data e ora; sotto, il testo in un riquadro leggero (azzurrino per i propri messaggi).
+  - Il testo si può formattare come la descrizione, ma senza titoli: grassetto, corsivo, barrato, sottolineato, elenchi, link. La barra di formattazione si apre con il pulsante **Aa** accanto al campo; le scorciatoie funzionano anche a barra chiusa.
+  - **Invio va a capo**; si spedisce con il pulsante blu o con Cmd+Invio, così non parte mai un messaggio a metà.
 
 E, solo se aggiunti, questi **moduli**:
 

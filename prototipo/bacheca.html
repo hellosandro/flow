@@ -418,14 +418,26 @@ body.grabbing, body.grabbing * { cursor: grabbing !important; }
 .quick { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
 .date-field { border: 0; background: var(--fill); border-radius: 8px; padding: 7px 10px; font: var(--t-body); color: var(--label); }
 
-.msgs { display: flex; flex-direction: column; gap: 12px; }
-.msg { display: grid; justify-items: start; gap: 3px; max-width: 82%; }
-.msg.me { align-self: flex-end; justify-items: end; }
-.bubble { padding: 8px 12px; border-radius: 18px; background: var(--fill); font: var(--t-body); line-height: 1.38; overflow-wrap: anywhere; }
-.msg.me .bubble { background: var(--blue); color: #fff; }
-.when { font: var(--t-cap); color: var(--label-3); padding: 0 6px; }
+.msgs { display: flex; flex-direction: column; gap: 20px; }
+.msg { display: grid; gap: 6px; }
+.msg-head { display: flex; align-items: center; gap: 8px; }
+.msg-head .av { width: 28px; height: 28px; font-size: 10px; box-shadow: none; }
+.msg-head .who { font: var(--t-head); }
+.msg-head .when { font: var(--t-cap); color: var(--label-3); font-variant-numeric: tabular-nums; }
+.msg-body { margin-left: 36px; padding: 10px 13px; border-radius: 10px; background: var(--fill); }
+.msg.me .msg-body { background: color-mix(in srgb, var(--blue) 9%, var(--surface)); }
 .empty { font: var(--t-sub); color: var(--label-3); text-align: center; margin: 32px auto; max-width: 30ch; text-wrap: balance; }
-.composer { display: flex; align-items: center; gap: 8px; padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px)); border-top: .5px solid var(--sep); }
+.composer { display: flex; flex-direction: column; gap: 6px; padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px)); border-top: .5px solid var(--sep); }
+.composer-row { display: flex; align-items: flex-end; gap: 8px; }
+.msg-input { flex: 1; min-width: 0; max-height: 40vh; overflow-y: auto; border: .5px solid var(--sep); background: var(--bg); border-radius: 18px; padding: 7px 14px; }
+.msg-input:focus { outline: none; border-color: var(--blue); }
+.msg-input:empty::before { content: attr(data-placeholder); color: var(--label-3); }
+.msg-input p, .msg-input ul, .msg-input ol { margin-bottom: 4px; }
+.aa-btn { width: 32px; height: 32px; border-radius: 50%; flex: none; font: 600 14px/1 var(--font); color: var(--label-2); }
+.aa-btn:hover { background: var(--fill); }
+.aa-btn[aria-pressed="true"] { background: var(--fill-strong); color: var(--blue); }
+.rte-bar.mini { border: 0; border-radius: 0; margin: 0; padding: 0 0 0 36px; min-height: 34px; background: none; }
+.rte-bar.mini .rte-menu { top: auto; bottom: calc(100% + 4px); }
 .composer input { flex: 1; min-width: 0; border: .5px solid var(--sep); background: var(--bg); border-radius: 99px; padding: 8px 14px; font: var(--t-body); }
 .composer input:focus { outline: none; border-color: var(--blue); }
 .send { width: 32px; height: 32px; border-radius: 50%; background: var(--blue); color: #fff; display: grid; place-items: center; flex: none; }
@@ -615,6 +627,7 @@ const state = {
   byTitle('Bozze etichetta Riserva 2023').messages = [
     { me: false, name: 'Marco Valori', text: 'Possiamo vedere anche una versione su carta goffrata?', at: Date.now() - 20 * H }
   ];
+  for (const c of state.cards) for (const m of c.messages) m.html ||= `<p>${esc(m.text)}</p>`;
 }
 
 const $ = s => document.querySelector(s);
@@ -712,7 +725,9 @@ function addMenuHTML(c) {
 const LIST_ICON = '<svg class="i" viewBox="0 0 16 16"><circle cx="3" cy="4.5" r=".9" fill="currentColor" stroke="none"/><circle cx="3" cy="8" r=".9" fill="currentColor" stroke="none"/><circle cx="3" cy="11.5" r=".9" fill="currentColor" stroke="none"/><path d="M6 4.5h7.5M6 8h7.5M6 11.5h7.5"/></svg>';
 const OL_ICON = '<svg class="i" viewBox="0 0 16 16"><path d="M6 4.5h7.5M6 8h7.5M6 11.5h7.5"/><text x="1.2" y="6" font-size="4.6" fill="currentColor" stroke="none" font-family="system-ui" font-weight="600">1</text><text x="1.2" y="13.2" font-size="4.6" fill="currentColor" stroke="none" font-family="system-ui" font-weight="600">2</text></svg>';
 const SMALL_CHEV = '<svg class="i dd-chev" viewBox="0 0 16 16"><path d="m4.5 6.5 3.5 3.5 3.5-3.5"/></svg>';
-const rteBar = () => `
+const linkInput = () => `<input id="f-linkurl" class="rte-link" type="url" placeholder="Incolla il link e premi Invio" enterkeyhint="done"><button type="button" class="rte-btn" data-linkcancel aria-label="Chiudi">${ICON.x}</button>`;
+/* Nei messaggi la barra è ridotta: niente titoli */
+const rteBar = ({ headings = true } = {}) => `${headings ? `
   <div class="rte-dd">
     <button type="button" class="rte-btn wide" data-dd="tt" aria-label="Stile del testo" aria-haspopup="menu"><span class="tt">Tt</span>${SMALL_CHEV}</button>
     <div class="menu rte-menu" data-ddmenu="tt" role="menu" hidden>
@@ -721,7 +736,7 @@ const rteBar = () => `
       <button type="button" class="mi" data-block="h3"><span class="m-h3">Sottotitolo</span></button>
     </div>
   </div>
-  <span class="rte-sep"></span>
+  <span class="rte-sep"></span>` : ''}
   <button type="button" class="rte-btn" data-cmd="bold" aria-label="Grassetto" title="Grassetto" aria-pressed="false"><b>B</b></button>
   <div class="rte-dd split-btn">
     <button type="button" class="rte-btn" data-cmd="italic" aria-label="Corsivo" title="Corsivo" aria-pressed="false"><span class="it">I</span></button>
@@ -793,7 +808,13 @@ function panelHTML(c) {
   switch (ui.tab) {
     case 'msg':
       return c.messages.length
-        ? `<div class="msgs">${c.messages.map(m => `<div class="msg ${m.me ? 'me' : ''}"><div class="bubble">${esc(m.text)}</div><span class="when">${m.me ? '' : esc(m.name) + ' · '}${fmtTime(m.at)}</span></div>`).join('')}</div>`
+        ? `<div class="msgs">${c.messages.map(m => {
+            const pid = m.me ? 'p-io' : state.people.find(p => p.name === m.name)?.id;
+            return `<article class="msg ${m.me ? 'me' : ''}">
+              <header class="msg-head">${pid ? avatars([pid]) : ''}<b class="who">${esc(m.me ? 'Io' : m.name)}</b><time class="when">${fmtTime(m.at)}</time></header>
+              <div class="msg-body rich">${m.html}</div>
+            </article>`;
+          }).join('')}</div>`
         : `<p class="empty">Nessun messaggio. Quando FLOW sarà condiviso, qui scriverai con il cliente.</p>`;
     case 'checklist': {
       const total = c.checklist.length, done = c.checklist.filter(i => i.done).length;
@@ -844,9 +865,7 @@ function panelHTML(c) {
       /* Descrizione: si legge come testo; tocchi il testo (o "Modifica") per scriverla, poi Salva */
       if (ui.editDesc) return `<div class="rte">
           <div class="rte-bar" role="toolbar" aria-label="Formattazione">
-            ${ui.linking
-              ? `<input id="f-linkurl" class="rte-link" type="url" placeholder="Incolla il link e premi Invio" enterkeyhint="done"><button type="button" class="rte-btn" data-linkcancel aria-label="Chiudi">${ICON.x}</button>`
-              : rteBar()}
+            ${ui.linking === 'f-notes' ? linkInput() : rteBar()}
           </div>
           <div id="f-notes" class="rte-area rich" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Descrizione" data-placeholder="Aggiungi una descrizione più dettagliata…">${ui.draft}</div>
         </div>
@@ -867,8 +886,12 @@ function renderSheet(opts = {}) {
   sheet.className = 'sheet side';
   const panelInner = `<div class="sheet-panel" data-panel="${ui.tab}" role="tabpanel">${MODULES[ui.tab] ? rmModule(ui.tab) : ''}${panelHTML(c)}</div>
     ${ui.tab === 'msg' ? `<form class="composer" id="composer">
-      <input id="f-msg" placeholder="Scrivi un messaggio" autocomplete="off" enterkeyhint="send" aria-label="Messaggio">
-      <button type="submit" class="send" aria-label="Invia">${ICON.up}</button>
+      ${ui.fmt ? `<div class="rte-bar mini" role="toolbar" aria-label="Formattazione">${ui.linking === 'f-msg' ? linkInput() : rteBar({ headings: false })}</div>` : ''}
+      <div class="composer-row">
+        <button type="button" class="aa-btn" data-fmt aria-pressed="${!!ui.fmt}" aria-label="Formattazione del testo" title="Formattazione">Aa</button>
+        <div id="f-msg" class="msg-input rich" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Messaggio" data-placeholder="Scrivi un messaggio">${ui.msgDraft || ''}</div>
+        <button type="submit" class="send" aria-label="Invia" title="Invia (Cmd+Invio)">${ICON.up}</button>
+      </div>
     </form>` : ''}`;
   const tabName = { desc: 'Descrizione', msg: 'Messaggi', ...MODULES }[ui.tab];
   sheet.innerHTML = `<div class="sheet-bar"><span class="grabber"></span>
@@ -904,7 +927,7 @@ function openCard(cid) {
   state.open = cid;
   const c = cardOf(cid);
   c.messages ||= []; c.modules ||= []; c.members ||= [];
-  Object.assign(ui, { drill: false, tab: 'desc', menu: null, confirm: null, addingItem: false, editDesc: false, draft: '' });
+  Object.assign(ui, { msgDraft: '', fmt: false, linking: false, drill: false, tab: 'desc', menu: null, confirm: null, addingItem: false, editDesc: false, draft: '' });
   sheetEl.innerHTML = `<div class="scrim" data-close></div><div class="sheet" role="dialog" aria-modal="true" aria-label="Scheda"></div>`;
   sheetEl.hidden = false;
   renderSheet();
@@ -1061,35 +1084,46 @@ function deleteModule(c, k) {
   if (k === 'members') c.members = [];
   ui.tab = 'desc';
 }
+/* Pulizia del testo formattato: niente paragrafi vuoti, niente elenchi chiusi dentro un paragrafo */
+function cleanHTML(html) {
+  const tmp = document.createElement('div'); tmp.innerHTML = html || '';
+  tmp.querySelectorAll('p > ul, p > ol').forEach(l => l.parentElement.replaceWith(...l.parentElement.childNodes));
+  tmp.querySelectorAll('p, h2, h3, li, div').forEach(el => { if (!el.textContent.trim()) el.remove(); });
+  tmp.querySelectorAll('a').forEach(a => { a.target = '_blank'; a.rel = 'noopener'; });
+  if (tmp.firstChild?.nodeType === 3) { const p = document.createElement('p'); p.append(...[...tmp.childNodes].filter(n => n.nodeType === 3 || /^(B|I|S|U|A|STRONG|EM|BR|STRIKE)$/.test(n.nodeName))); tmp.prepend(p); }
+  return tmp.textContent.trim() ? tmp.innerHTML.trim() : '';
+}
 function saveDesc(c) {
   if (!ui.editDesc) return;
-  const tmp = document.createElement('div'); tmp.innerHTML = ui.draft;
-  /* pulizia: niente paragrafi vuoti, niente elenchi chiusi dentro un paragrafo */
-  tmp.querySelectorAll('p > ul, p > ol').forEach(l => l.parentElement.replaceWith(...l.parentElement.childNodes));
-  tmp.querySelectorAll('p, h2, h3, li').forEach(el => { if (!el.textContent.trim()) el.remove(); });
-  c.notes = tmp.textContent.trim() ? tmp.innerHTML.trim() : '';
+  c.notes = cleanHTML(ui.draft);
   ui.editDesc = false; ui.linking = false;
+}
+/* Due editor: la descrizione (f-notes) e il messaggio (f-msg); la barra lavora su quello usato per ultimo */
+const draftKey = id => id === 'f-msg' ? 'msgDraft' : 'draft';
+let lastEd = 'f-notes';
+const curEd = () => $('#' + lastEd) || $('#f-notes') || $('#f-msg');
+sheetEl.addEventListener('focusin', e => { if (e.target.isContentEditable && e.target.id) lastEd = e.target.id; });
+function placeCaretEnd(ed) {
+  if (!ed) return;
+  ed.focus();
+  let last = null;
+  const walk = document.createTreeWalker(ed, NodeFilter.SHOW_TEXT);
+  for (let n = walk.nextNode(); n; n = walk.nextNode()) if (n.textContent.trim()) last = n;
+  const r = document.createRange();
+  if (last) r.setStart(last, last.textContent.length); else { r.selectNodeContents(ed); r.collapse(false); }
+  r.collapse(true);
+  const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r);
 }
 function openEditor(c) {
   ui.editDesc = true; ui.draft = c.notes; ui.linking = false; renderSheet();
   try { document.execCommand('defaultParagraphSeparator', false, 'p'); } catch {}
   /* il cursore va in fondo al testo, dopo che il clic è finito */
-  setTimeout(() => {
-    const ed = $('#f-notes'); if (!ed) return;
-    ed.focus();
-    let last = null;
-    const walk = document.createTreeWalker(ed, NodeFilter.SHOW_TEXT);
-    for (let n = walk.nextNode(); n; n = walk.nextNode()) if (n.textContent.trim()) last = n;
-    const r = document.createRange();
-    if (last) r.setStart(last, last.textContent.length); else { r.selectNodeContents(ed); r.collapse(false); }
-    r.collapse(true);
-    const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r);
-  }, 0);
+  setTimeout(() => placeCaretEnd($('#f-notes')), 0);
 }
 /* Barra di formattazione: i pulsanti non tolgono il cursore dal testo */
 let savedRange = null;
 function syncToolbar() {
-  const ed = $('#f-notes'); if (!ed) return;
+  const ed = curEd(); if (!ed) return;
   const sel = getSelection(); if (!sel.rangeCount || !ed.contains(sel.anchorNode)) return;
   sheetEl.querySelectorAll('[data-cmd]').forEach(b => {
     const cmd = b.dataset.cmd;
@@ -1105,16 +1139,16 @@ document.addEventListener('selectionchange', syncToolbar);
 sheetEl.addEventListener('mousedown', e => { if (e.target.closest('[data-cmd], [data-cmd2], [data-block], [data-dd]')) e.preventDefault(); });
 const closeRteMenus = () => sheetEl.querySelectorAll('[data-ddmenu]').forEach(m => { m.hidden = true; });
 function runCmd(cmd, value = null) {
-  const ed = $('#f-notes'); ed.focus();
+  const ed = curEd(); ed.focus();
   document.execCommand(cmd, false, value);
   if (cmd === 'removeFormat') document.execCommand('formatBlock', false, 'p');
-  ui.draft = ed.innerHTML; closeRteMenus(); syncToolbar();
+  ui[draftKey(ed.id)] = ed.innerHTML; closeRteMenus(); syncToolbar();
 }
 function applyLink(url) {
+  const edId = ui.linking;
   ui.linking = false;
-  const html = ui.draft;
   renderSheet();
-  const ed = $('#f-notes'); ed.innerHTML = html; ed.focus();
+  const ed = $('#' + edId); ed.focus();
   if (savedRange && url) {
     const sel = getSelection(); sel.removeAllRanges();
     /* il contenuto è stato ridisegnato: si ricostruisce la selezione dalla posizione nel testo */
@@ -1124,7 +1158,7 @@ function applyLink(url) {
     else document.execCommand('createLink', false, url);
     ed.querySelectorAll('a').forEach(a => { a.target = '_blank'; a.rel = 'noopener'; });
   }
-  ui.draft = ed.innerHTML;
+  ui[draftKey(edId)] = ed.innerHTML;
 }
 const textOffset = (root, node, off) => { const r = document.createRange(); r.selectNodeContents(root); r.setEnd(node, off); return r.toString().length; };
 function restoreRange(root, _t, start, end) {
@@ -1159,16 +1193,22 @@ sheetEl.addEventListener('click', e => {
   const cmd = t.closest('[data-cmd]');
   if (cmd) {
     if (cmd.dataset.cmd === 'link') {
-      const ed = $('#f-notes'), sel = getSelection();
+      const ed = curEd(), sel = getSelection();
       if (sel.rangeCount && ed.contains(sel.anchorNode)) {
         const r = sel.getRangeAt(0);
         savedRange = { start: textOffset(ed, r.startContainer, r.startOffset), end: textOffset(ed, r.endContainer, r.endOffset) };
       } else savedRange = { start: ed.textContent.length, end: ed.textContent.length };
-      ui.draft = ed.innerHTML; ui.linking = true; renderSheet(); $('#f-linkurl').focus();
+      ui[draftKey(ed.id)] = ed.innerHTML; ui.linking = ed.id; renderSheet(); $('#f-linkurl').focus();
     } else runCmd(cmd.dataset.cmd);
     return;
   }
   if (t.closest('[data-linkcancel]')) { applyLink(''); return; }
+  if (t.closest('[data-fmt]')) {
+    const ed = $('#f-msg'); if (ed) ui.msgDraft = ed.innerHTML;
+    ui.fmt = !ui.fmt; ui.linking = false; renderSheet({ bottom: true });
+    setTimeout(() => placeCaretEnd($('#f-msg')), 0);
+    return;
+  }
   if (t.closest('[data-savedesc]')) { saveDesc(c); renderSheet(); return; }
   if (t.closest('[data-canceldesc]')) { ui.editDesc = false; renderSheet(); return; }
   const mem = t.closest('[data-member]');
@@ -1220,20 +1260,21 @@ sheetEl.addEventListener('click', e => {
 });
 sheetEl.addEventListener('submit', e => {
   e.preventDefault();
-  const c = cardOf(state.open), inp = $('#f-msg');
-  const text = inp.value.trim(); if (!c || !text) return;
-  c.messages.push({ me: true, name: 'Io', text, at: Date.now() });
-  renderSheet({ bottom: true }); $('#f-msg').focus();
+  const c = cardOf(state.open), ed = $('#f-msg');
+  const html = cleanHTML(ed?.innerHTML); if (!c || !html) return;
+  c.messages.push({ me: true, name: 'Io', html, at: Date.now() });
+  ui.msgDraft = ''; ui.linking = false;
+  renderSheet({ bottom: true }); placeCaretEnd($('#f-msg'));
 });
 sheetEl.addEventListener('paste', e => {
-  if (e.target.closest?.('#f-notes')) { e.preventDefault(); document.execCommand('insertText', false, e.clipboardData.getData('text/plain')); }
+  if (e.target.closest?.('[contenteditable]')) { e.preventDefault(); document.execCommand('insertText', false, e.clipboardData.getData('text/plain')); }
 });
 sheetEl.addEventListener('input', e => {
   const c = cardOf(state.open); if (!c) return;
   const t = e.target;
   if (t.id === 'f-title') c.title = t.value.replace(/\n/g, ' ') || 'Senza titolo';
-  if (t.id === 'f-notes') {
-    ui.draft = t.innerHTML;
+  if (t.id === 'f-notes' || t.id === 'f-msg') {
+    ui[draftKey(t.id)] = t.innerHTML;
     /* Scorciatoie come su Trello: "- " o "* " a inizio riga fa un elenco puntato, "1. " un elenco numerato */
     const sel = getSelection(), n = sel.anchorNode;
     if (e.inputType === 'insertText' && e.data === ' ' && n?.nodeType === 3 && !n.parentElement.closest('li')) {
@@ -1243,7 +1284,7 @@ sheetEl.addEventListener('input', e => {
         sel.removeAllRanges(); sel.addRange(r);
         document.execCommand('delete');
         document.execCommand(m[1] === '1.' ? 'insertOrderedList' : 'insertUnorderedList');
-        ui.draft = t.innerHTML;
+        ui[draftKey(t.id)] = t.innerHTML;
       }
     }
   }
@@ -1262,6 +1303,8 @@ sheetEl.addEventListener('keydown', e => {
   const c = cardOf(state.open); if (!c) return;
   const t = e.target;
   if (t.id === 'f-notes' && e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); saveDesc(c); renderSheet(); return; }
+  /* Nei messaggi Invio va a capo; si spedisce con il pulsante o con Cmd+Invio */
+  if (t.id === 'f-msg' && e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); $('#composer').requestSubmit(); return; }
   if (t.id === 'f-linkurl' && (e.key === 'Enter' || e.key === 'Escape')) {
     e.preventDefault();
     let url = e.key === 'Enter' ? t.value.trim() : '';
