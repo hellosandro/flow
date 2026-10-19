@@ -53,6 +53,7 @@ Ogni scheda contiene sempre:
   - Ogni messaggio mostra in alto, come su Trello, iniziali e **nome di chi scrive** in evidenza, con data e ora; sotto, il testo in un riquadro leggero (azzurrino per i propri messaggi).
   - Il testo si può formattare come la descrizione, ma senza titoli: grassetto, corsivo, barrato, sottolineato, elenchi, link. La barra di formattazione si apre con il pulsante **Aa** accanto al campo; le scorciatoie funzionano anche a barra chiusa.
   - **Invio va a capo**; si spedisce con il pulsante blu o con Cmd+Invio, così non parte mai un messaggio a metà.
+  - Sotto i **propri** messaggi ci sono **Modifica · Elimina** (sul computer compaiono passandoci sopra). Modifica apre il testo con la stessa barra di formattazione, Salva e Annulla; un messaggio modificato mostra "modificato" accanto all'ora. Elimina chiede conferma. I messaggi del cliente non si possono modificare.
 
 E, solo se aggiunti, questi **moduli**:
 
@@ -82,7 +83,7 @@ Regole dei moduli:
 - **+ Moduli** apre un menu a tendina con tutti i moduli e una spunta accanto a quelli visibili.
 - **Spuntare** un modulo lo mostra. **Togliere la spunta lo nasconde ma non ne cancella il contenuto**: rimettendo la spunta torna com'era. Nel menu, accanto a un modulo nascosto con contenuto, compare un'indicazione grigia (es. "5 elementi").
 - Un modulo nascosto non compare da nessuna parte, nemmeno sulla scheda in colonna: una scadenza nascosta non dà avvisi.
-- **Eliminare** un modulo si fa solo dal suo contenuto, dal menu "…" in alto a destra. Se il modulo ha contenuto, un avviso chiede conferma dicendo cosa si perde (es. "I 5 elementi verranno cancellati definitivamente"), con **Annulla** come scelta predefinita.
+- **Eliminare** un modulo si fa dal menu "…" della scheda (in alto a destra): mostra **Elimina [nome della sezione aperta]** sopra *Elimina scheda*. Non ci sono altri "…" nelle sezioni. Se il modulo ha contenuto, un avviso chiede conferma dicendo cosa si perde (es. "I 5 elementi verranno cancellati definitivamente"), con **Annulla** come scelta predefinita.
 - La descrizione si legge già formattata; toccandola si apre la modifica, con una barra di formattazione (Tt▾ per i titoli, grassetto, corsivo▾ per gli altri stili, elenchi▾, link) e i pulsanti **Salva** e **Annulla**. Scrivere "- " o "1. " a inizio riga crea un elenco. Il testo incollato entra senza formattazione.
 - La checklist è nello stile di Trello: barra di avanzamento con percentuale, quadratini da spuntare, elementi fatti barrati.
 - In alto a destra ci sono due icone: **"…"** apre un menu con **Sposta in** (elenco delle colonne, con la spunta su quella attuale) ed **Elimina scheda** (in rosso, con avviso di conferma); **✕** chiude la scheda.

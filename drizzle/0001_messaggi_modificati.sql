@@ -1,0 +1,1 @@
+ALTER TABLE "messages" ADD COLUMN "modificato" boolean DEFAULT false NOT NULL;
