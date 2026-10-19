@@ -288,6 +288,45 @@ body.grabbing, body.grabbing * { cursor: grabbing !important; }
 .mod-more .icon-btn { color: var(--label-2); }
 .mod-more .menu { top: 36px; }
 
+/* Variante con barra laterale a destra */
+.sheet.side { width: min(780px, 100%); }
+.split { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 216px; border-top: .5px solid var(--sep); }
+.content-col { display: flex; flex-direction: column; min-height: 0; min-width: 0; }
+.sheet.side .sheet-head { border-bottom: 0; padding-bottom: 12px; }
+.sidenav { display: flex; flex-direction: column; gap: 1px; padding: 10px 8px; border-left: .5px solid var(--sep); overflow-y: auto; background: color-mix(in srgb, var(--fill) 40%, var(--surface)); }
+.nav-item { display: flex; align-items: center; gap: 10px; width: 100%; padding: 7px 10px; border-radius: 8px; font: var(--t-body); color: var(--label); text-align: left; }
+.nav-item > svg.i { width: 18px; height: 18px; color: var(--label-2); }
+.nav-item:hover { background: var(--fill); }
+.nav-item[aria-selected="true"] { background: var(--fill-strong); font-weight: 600; }
+.nav-item[aria-selected="true"] > svg.i { color: var(--blue); }
+.nav-item .nl { flex: 1; min-width: 0; }
+.nav-item .nm { font: var(--t-cap); color: var(--label-3); font-variant-numeric: tabular-nums; }
+.nav-item .nm .due-soon { color: var(--orange); }
+.nav-item .nm .due-late { color: var(--red); }
+.nav-item .nm .av { width: 18px; height: 18px; font-size: 8px; box-shadow: none; }
+.nav-item .chev-r { display: none; }
+.nav-item.quiet, .nav-item.quiet > svg.i { color: var(--blue); }
+.nav-sep { height: .5px; background: var(--sep); margin: 8px 10px; }
+.nav-add { display: block; }
+.nav-add .menu { left: auto; right: 0; }
+.back-bar { display: none; }
+.variant { display: flex; background: var(--fill); border-radius: 8px; padding: 2px; }
+.variant button { font: var(--t-cap); padding: 4px 10px; border-radius: 6px; white-space: nowrap; color: var(--label-2); }
+.variant button[aria-pressed="true"] { background: var(--surface); color: var(--label); font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+@media (max-width: 720px) {
+  /* Su telefono la barra diventa un elenco: tocchi una voce e il contenuto entra da destra, come su iPhone */
+  .split { grid-template-columns: 1fr; }
+  .sidenav { border-left: 0; background: none; padding-left: var(--gutter-l); padding-right: var(--gutter-r); }
+  .nav-item { padding: 12px 10px; }
+  .nav-item .chev-r { display: inline-grid; color: var(--label-3); transform: rotate(-90deg); }
+  .nav-item[aria-selected="true"] { background: none; font-weight: 400; }
+  .nav-item[aria-selected="true"] > svg.i { color: var(--label-2); }
+  .split:not(.drilled) .content-col, .split.drilled .sidenav { display: none; }
+  .back-bar { display: flex; align-items: center; gap: 2px; padding: 10px var(--gutter-r) 0 var(--gutter-l); color: var(--blue); font: var(--t-body); }
+  .back-bar svg.i { width: 18px; height: 18px; stroke-width: 2; }
+  .back-bar span { margin-left: auto; color: var(--label-2); font: var(--t-sub); }
+}
+
 /* Avviso di conferma, nello stile degli avvisi di iPhone */
 .alert-wrap { position: absolute; inset: 0; z-index: 10; display: grid; place-items: center; padding: 24px; background: var(--scrim); animation: fade .15s ease; }
 .alert { width: min(280px, 100%); background: var(--surface); border-radius: 14px; box-shadow: var(--lift-shadow); text-align: center; overflow: hidden; }
@@ -456,6 +495,7 @@ const ICON = {
   tag: '<svg class="i" viewBox="0 0 16 16"><path d="M2.5 8.6V3.5a1 1 0 0 1 1-1h5.1l5 5a1 1 0 0 1 0 1.4l-4.7 4.7a1 1 0 0 1-1.4 0z"/><circle cx="5.6" cy="5.6" r=".9" fill="currentColor" stroke="none"/></svg>',
   up: '<svg class="i" viewBox="0 0 16 16"><path d="M8 13V3M4 7l4-4 4 4"/></svg>',
   msg: '<svg class="i" viewBox="0 0 16 16"><path d="M3 4.5A1.5 1.5 0 0 1 4.5 3h7A1.5 1.5 0 0 1 13 4.5v5a1.5 1.5 0 0 1-1.5 1.5H7.2L4.5 13v-2a1.5 1.5 0 0 1-1.5-1.5z"/></svg>',
+  chevl: '<svg class="i" viewBox="0 0 16 16"><path d="M10 3 5 8l5 5"/></svg>',
   person: '<svg class="i" viewBox="0 0 16 16"><circle cx="8" cy="5.5" r="2.5"/><path d="M3 13.5c.6-2.4 2.6-3.8 5-3.8s4.4 1.4 5 3.8"/></svg>',
   more: '<svg class="i" viewBox="0 0 16 16"><circle cx="3.5" cy="8" r="1.2" fill="currentColor" stroke="none"/><circle cx="8" cy="8" r="1.2" fill="currentColor" stroke="none"/><circle cx="12.5" cy="8" r="1.2" fill="currentColor" stroke="none"/></svg>'
 };
@@ -605,7 +645,7 @@ function updateSeg() {
 /* Scheda aperta: titolo, poi una riga di pillole. Descrizione e Messaggi ci sono sempre;
    Checklist, Link, Scadenza ed Etichette compaiono solo se li aggiungi. Sotto, il contenuto della pillola scelta. */
 const MODULES = { checklist: 'Checklist', links: 'Link', due: 'Scadenza', labels: 'Etichette', members: 'Membri' };
-const ui = { tab: 'desc', menu: null, confirm: null, addingItem: false, editDesc: false, draft: '' };
+const ui = { layout: 'side', drill: false, tab: 'desc', menu: null, confirm: null, addingItem: false, editDesc: false, draft: '' };
 
 const dayOf = ms => new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(ms));
 const fmtTime = ms => {
@@ -627,13 +667,40 @@ function pillsHTML(c) {
   }
   out.push(`<span class="add-wrap">
     <button type="button" class="ghost-pill plus-pill" data-addtoggle aria-label="Moduli della scheda" aria-haspopup="menu" aria-expanded="${ui.menu === 'add'}">${ICON.plus}</button>
-    ${ui.menu === 'add' ? `<div class="menu" role="menu">${Object.keys(MODULES).map(k => {
-      const shown = c.modules.includes(k), hint = shown ? '' : contentHint(c, k);
-      return `<button type="button" class="mi" role="menuitemcheckbox" aria-checked="${shown}" data-module="${k}">
-        <span class="mk">${shown ? ICON.tick : ''}</span>${MODULES[k]}${hint ? `<small>${hint}</small>` : ''}</button>`;
-    }).join('')}</div>` : ''}
+    ${addMenuHTML(c)}
   </span>`);
   return `<div class="pills" role="tablist">${out.join('')}</div>`;
+}
+function addMenuHTML(c) {
+  if (ui.menu !== 'add') return '';
+  return `<div class="menu" role="menu">${Object.keys(MODULES).map(k => {
+    const shown = c.modules.includes(k), hint = shown ? '' : contentHint(c, k);
+    return `<button type="button" class="mi" role="menuitemcheckbox" aria-checked="${shown}" data-module="${k}">
+      <span class="mk">${shown ? ICON.tick : ''}</span>${MODULES[k]}${hint ? `<small>${hint}</small>` : ''}</button>`;
+  }).join('')}</div>`;
+}
+
+/* Variante con barra laterale a destra: le stesse voci delle pillole, in elenco con icona */
+const MOD_ICON = { desc: ICON.note, msg: ICON.msg, checklist: ICON.check, links: ICON.link, due: ICON.cal, labels: ICON.tag, members: ICON.person };
+function navHTML(c) {
+  const col = colOf(c.col);
+  const item = (k, label, meta = '') => `<button type="button" class="nav-item" role="tab" aria-selected="${ui.tab === k}" data-tab="${k}">
+    ${MOD_ICON[k]}<span class="nl">${label}</span>${meta ? `<span class="nm">${meta}</span>` : ''}<span class="chev-r">${ICON.chev}</span></button>`;
+  const out = [item('desc', 'Descrizione'), item('msg', 'Messaggi', c.messages.length || '')];
+  for (const k of c.modules) {
+    if (k === 'checklist') out.push(item(k, 'Checklist', c.checklist.length ? `${c.checklist.filter(i => i.done).length}/${c.checklist.length}` : ''));
+    if (k === 'links') out.push(item(k, 'Link', c.links.length || ''));
+    if (k === 'due') { const due = dueInfo(c.due, col.type === 'fatto'); out.push(item(k, 'Scadenza', due ? `<span class="${due.cls}">${esc(due.text)}</span>` : '')); }
+    if (k === 'labels') { const labs = c.labels.map(labelOf).filter(Boolean); out.push(item(k, 'Etichette', labs.length ? `<span class="dots">${labs.map(l => `<i style="--c:${l.color}"></i>`).join('')}</span>` : '')); }
+    if (k === 'members') out.push(item(k, 'Membri', c.members.length ? avatars(c.members) : ''));
+  }
+  return `<nav class="sidenav" role="tablist" aria-label="Sezioni della scheda">${out.join('')}
+    <div class="nav-sep"></div>
+    <div class="add-wrap nav-add">
+      <button type="button" class="nav-item quiet" data-addtoggle aria-haspopup="menu" aria-expanded="${ui.menu === 'add'}">${ICON.plus}<span class="nl">Moduli</span></button>
+      ${addMenuHTML(c)}
+    </div>
+  </nav>`;
 }
 
 const plural = (n, one, many) => n === 1 ? one : `${n} ${many}`;
@@ -729,27 +796,41 @@ function renderSheet(opts = {}) {
   const sheet = sheetEl.querySelector('.sheet');
   const old = sheet.querySelector('.sheet-panel');
   const scroll = old && old.dataset.panel === ui.tab ? old.scrollTop : 0;
+  const side = ui.layout === 'side';
+  sheet.className = 'sheet' + (side ? ' side' : '');
+  const panelInner = `<div class="sheet-panel" data-panel="${ui.tab}" role="tabpanel">${MODULES[ui.tab] ? rmModule(ui.tab) : ''}${panelHTML(c)}</div>
+    ${ui.tab === 'msg' ? `<form class="composer" id="composer">
+      <input id="f-msg" placeholder="Scrivi un messaggio" autocomplete="off" enterkeyhint="send" aria-label="Messaggio">
+      <button type="submit" class="send" aria-label="Invia">${ICON.up}</button>
+    </form>` : ''}`;
+  const tabName = { desc: 'Descrizione', msg: 'Messaggi', ...MODULES }[ui.tab];
   sheet.innerHTML = `<div class="sheet-bar"><span class="grabber"></span>
       <div class="more-wrap">
         <button class="icon-btn" type="button" data-more aria-label="Altre azioni" aria-expanded="${ui.menu === 'more'}">${ICON.more}</button>
         ${ui.menu === 'more' ? `<div class="menu"><button type="button" class="danger" data-delete>Elimina scheda</button></div>` : ''}
       </div>
+      <div class="variant" role="group" aria-label="Prova di impaginazione">
+        <button type="button" data-layout="pills" aria-pressed="${!side}">Pillole</button>
+        <button type="button" data-layout="side" aria-pressed="${side}">Barra laterale</button>
+      </div>
       <button class="btn-text strong" type="button" data-close>Fine</button>
     </div>
     <div class="sheet-head">
       <textarea id="f-title" class="f-title" rows="1" aria-label="Titolo">${esc(c.title)}</textarea>
-      ${pillsHTML(c)}
+      ${side ? '' : pillsHTML(c)}
     </div>
-    <div class="sheet-panel" data-panel="${ui.tab}" role="tabpanel">${MODULES[ui.tab] ? rmModule(ui.tab) : ''}${panelHTML(c)}</div>
+    ${side ? `<div class="split ${ui.drill ? 'drilled' : ''}">
+      <div class="content-col">
+        <button type="button" class="back-bar" data-back>${ICON.chevl}Sezioni<span>${tabName}</span></button>
+        ${panelInner}
+      </div>
+      ${navHTML(c)}
+    </div>` : panelInner}
     ${ui.confirm ? `<div class="alert-wrap"><div class="alert" role="alertdialog" aria-modal="true" aria-labelledby="alert-t" aria-describedby="alert-d">
       <h3 id="alert-t">Eliminare ${{ checklist: 'la checklist', links: 'i link', due: 'la scadenza', labels: 'le etichette', members: 'i membri' }[ui.confirm]}?</h3>
       <p id="alert-d">${confirmText(c, ui.confirm)}</p>
       <div class="alert-actions"><button type="button" class="strong" data-alertcancel>Annulla</button><button type="button" class="danger" data-alertok>Elimina</button></div>
-    </div></div>` : ''}
-    ${ui.tab === 'msg' ? `<form class="composer" id="composer">
-      <input id="f-msg" placeholder="Scrivi un messaggio" autocomplete="off" enterkeyhint="send" aria-label="Messaggio">
-      <button type="submit" class="send" aria-label="Invia">${ICON.up}</button>
-    </form>` : ''}`;
+    </div></div>` : ''}`;
   const panel = sheet.querySelector('.sheet-panel');
   panel.scrollTop = ui.tab === 'msg' && opts.bottom ? panel.scrollHeight : scroll;
   /* Il menu Aggiungi si apre verso sinistra se a destra non c'è spazio */
@@ -761,7 +842,7 @@ function openCard(cid) {
   state.open = cid;
   const c = cardOf(cid);
   c.messages ||= []; c.modules ||= []; c.members ||= [];
-  Object.assign(ui, { tab: 'desc', menu: null, confirm: null, addingItem: false, editDesc: false, draft: '' });
+  Object.assign(ui, { drill: false, tab: 'desc', menu: null, confirm: null, addingItem: false, editDesc: false, draft: '' });
   sheetEl.innerHTML = `<div class="scrim" data-close></div><div class="sheet" role="dialog" aria-modal="true" aria-label="Scheda"></div>`;
   sheetEl.hidden = false;
   renderSheet();
@@ -948,6 +1029,9 @@ sheetEl.addEventListener('click', e => {
     if (k === 'links') focusEnd('#f-newlink');
     return;
   }
+  const lay = t.closest('[data-layout]');
+  if (lay) { ui.layout = lay.dataset.layout; ui.drill = false; renderSheet(); return; }
+  if (t.closest('[data-back]')) { ui.drill = false; renderSheet(); return; }
   if (t.closest('[data-modmore]')) { ui.menu = ui.menu === 'mod' ? null : 'mod'; renderSheet(); return; }
   /* Elimina dal "…" del modulo: se c'è contenuto chiede conferma, se è vuoto toglie subito */
   const rmm = t.closest('[data-rmmodule]');
@@ -960,7 +1044,7 @@ sheetEl.addEventListener('click', e => {
   if (t.closest('[data-alertcancel]')) { ui.confirm = null; renderSheet(); return; }
   if (t.closest('[data-alertok]')) { deleteModule(c, ui.confirm); ui.confirm = null; renderSheet(); return; }
   const tab = t.closest('[data-tab]');
-  if (tab) { saveDesc(c); ui.tab = tab.dataset.tab; ui.addingItem = false; renderSheet({ bottom: true }); return; }
+  if (tab) { saveDesc(c); ui.drill = true; ui.tab = tab.dataset.tab; ui.addingItem = false; renderSheet({ bottom: true }); return; }
   if (t.closest('[data-additem]')) { ui.addingItem = true; renderSheet(); focusEnd('#f-newitem'); return; }
   const q = t.closest('[data-duequick]');
   if (q) { c.due = addDays(today, +q.dataset.duequick); renderSheet(); return; }
