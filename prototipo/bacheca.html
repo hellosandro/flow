@@ -97,6 +97,7 @@ svg.i { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-widt
   border-radius: 6px;
 }
 .board-title:focus { outline: none; box-shadow: 0 0 0 2px var(--blue); }
+.board-title:hover:not(:focus) { background: var(--fill); box-shadow: 0 0 0 4px var(--fill); }
 .board-meta { font: var(--t-sub); color: var(--label-2); margin: 0; font-variant-numeric: tabular-nums; }
 
 /* Controllo segmentato (solo telefono) */
@@ -238,6 +239,13 @@ body.grabbing, body.grabbing * { cursor: grabbing !important; }
 .icon-btn svg.i { width: 20px; height: 20px; }
 .more-wrap { position: relative; flex: none; }
 .menu { position: absolute; top: 38px; left: 0; z-index: 3; min-width: 190px; padding: 4px; background: var(--surface); border-radius: 12px; box-shadow: var(--lift-shadow); }
+.add-wrap { position: relative; display: inline-flex; }
+.add-wrap .menu { top: calc(100% + 6px); animation: fade .15s ease; }
+.menu.right { left: auto; right: 0; }
+.menu .mi { display: flex; align-items: center; gap: 10px; }
+.menu .mi svg.i { width: 16px; height: 16px; color: var(--label-2); }
+.pills .menu button { width: 100%; padding: 9px 12px; border-radius: 8px; background: none; font: var(--t-body); color: var(--label); }
+.pills .menu button:hover { background: var(--fill); }
 .menu button { display: block; width: 100%; text-align: left; padding: 9px 12px; border-radius: 8px; font: var(--t-body); }
 .menu button:hover { background: var(--fill); }
 .menu .danger { color: var(--red); }
@@ -430,6 +438,7 @@ const ICON = {
   tag: '<svg class="i" viewBox="0 0 16 16"><path d="M2.5 8.6V3.5a1 1 0 0 1 1-1h5.1l5 5a1 1 0 0 1 0 1.4l-4.7 4.7a1 1 0 0 1-1.4 0z"/><circle cx="5.6" cy="5.6" r=".9" fill="currentColor" stroke="none"/></svg>',
   up: '<svg class="i" viewBox="0 0 16 16"><path d="M8 13V3M4 7l4-4 4 4"/></svg>',
   msg: '<svg class="i" viewBox="0 0 16 16"><path d="M3 4.5A1.5 1.5 0 0 1 4.5 3h7A1.5 1.5 0 0 1 13 4.5v5a1.5 1.5 0 0 1-1.5 1.5H7.2L4.5 13v-2a1.5 1.5 0 0 1-1.5-1.5z"/></svg>',
+  person: '<svg class="i" viewBox="0 0 16 16"><circle cx="8" cy="5.5" r="2.5"/><path d="M3 13.5c.6-2.4 2.6-3.8 5-3.8s4.4 1.4 5 3.8"/></svg>',
   more: '<svg class="i" viewBox="0 0 16 16"><circle cx="3.5" cy="8" r="1.2" fill="currentColor" stroke="none"/><circle cx="8" cy="8" r="1.2" fill="currentColor" stroke="none"/><circle cx="12.5" cy="8" r="1.2" fill="currentColor" stroke="none"/></svg>'
 };
 const host = u => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch { return u; } };
@@ -545,7 +554,7 @@ function cardHTML(c, col) {
 
 function renderBoard() {
   $('#board-title').value = state.title;
-  $('#board-meta').textContent = `Creata il ${fmtLong(state.created)} · ${state.cards.length} schede`;
+  $('#board-meta').textContent = `Creata il ${fmtLong(state.created)}`;
   const keepScroll = boardEl.scrollLeft;
   boardEl.innerHTML = state.columns.map(col => {
     const cards = state.cards.filter(c => c.col === col.id);
@@ -553,7 +562,6 @@ function renderBoard() {
     return `<section class="col" data-col="${col.id}" data-type="${col.type}" id="col-${col.id}">
       <header class="col-head">
         <h2 class="col-title">${fixed ? esc(col.title) : `<input value="${esc(col.title)}" data-rename="${col.id}" aria-label="Titolo colonna">`}</h2>
-        <span class="count">${cards.length}</span>
       </header>
       <div class="list" data-list="${col.id}">${cards.map(c => cardHTML(c, col)).join('')}</div>
       ${state.adding === col.id
@@ -600,10 +608,11 @@ function pillsHTML(c) {
   }
   const missing = Object.keys(MODULES).filter(k => !c.modules.includes(k));
   if (missing.length) {
-    if (ui.adding) {
-      out.push(...missing.map(k => `<button type="button" class="ghost-pill" data-module="${k}">${ICON.plus}${MODULES[k]}</button>`));
-      out.push(`<button type="button" class="ghost-pill quiet" data-addtoggle aria-label="Chiudi">${ICON.x}</button>`);
-    } else out.push(`<button type="button" class="ghost-pill" data-addtoggle>${ICON.plus}Aggiungi</button>`);
+    const icons = { checklist: ICON.check, links: ICON.link, due: ICON.cal, labels: ICON.tag, members: ICON.person };
+    out.push(`<span class="add-wrap">
+      <button type="button" class="ghost-pill" data-addtoggle aria-haspopup="menu" aria-expanded="${ui.menu === 'add'}">${ICON.plus}Aggiungi</button>
+      ${ui.menu === 'add' ? `<div class="menu" role="menu">${missing.map(k => `<button type="button" class="mi" role="menuitem" data-module="${k}">${icons[k]}${MODULES[k]}</button>`).join('')}</div>` : ''}
+    </span>`);
   }
   return `<div class="pills" role="tablist">${out.join('')}</div>`;
 }
@@ -697,6 +706,9 @@ function renderSheet(opts = {}) {
     </form>` : ''}`;
   const panel = sheet.querySelector('.sheet-panel');
   panel.scrollTop = ui.tab === 'msg' && opts.bottom ? panel.scrollHeight : scroll;
+  /* Il menu Aggiungi si apre verso sinistra se a destra non c'è spazio */
+  const addMenu = sheet.querySelector('.add-wrap .menu');
+  if (addMenu && addMenu.getBoundingClientRect().right > sheet.getBoundingClientRect().right - 12) addMenu.classList.add('right');
 }
 function openCard(cid) {
   state.open = cid;
@@ -854,7 +866,7 @@ function saveDesc(c) { if (ui.editDesc) { c.notes = ui.draft.trim(); ui.editDesc
 sheetEl.addEventListener('click', e => {
   const c = cardOf(state.open); if (!c) return;
   const t = e.target;
-  if (ui.menu && !t.closest('.more-wrap')) { ui.menu = null; renderSheet(); }
+  if (ui.menu && !t.closest('.more-wrap, .add-wrap')) { ui.menu = null; renderSheet(); }
   if (t.closest('[data-close]')) { saveDesc(c); return closeSheet(); }
   if (t.closest('[data-editdesc]')) { ui.editDesc = true; ui.draft = c.notes; renderSheet(); focusEnd('#f-notes'); return; }
   if (t.closest('[data-savedesc]')) { saveDesc(c); renderSheet(); return; }
@@ -863,11 +875,11 @@ sheetEl.addEventListener('click', e => {
   if (mem) { const m = mem.dataset.member; c.members = c.members.includes(m) ? c.members.filter(x => x !== m) : [...c.members, m]; renderSheet(); return; }
   if (t.closest('[data-more]')) { ui.menu = ui.menu === 'more' ? null : 'more'; renderSheet(); return; }
   if (t.closest('[data-delete]')) { state.cards.splice(state.cards.indexOf(c), 1); return closeSheet(); }
-  if (t.closest('[data-addtoggle]')) { ui.adding = !ui.adding; renderSheet(); return; }
+  if (t.closest('[data-addtoggle]')) { ui.menu = ui.menu === 'add' ? null : 'add'; renderSheet(); return; }
   const mod = t.closest('[data-module]');
   if (mod) {
     const k = mod.dataset.module;
-    c.modules.push(k); ui.tab = k; ui.adding = false; ui.addingItem = true;
+    c.modules.push(k); ui.tab = k; ui.menu = null; ui.addingItem = true;
     renderSheet();
     if (k === 'checklist') focusEnd('#f-newitem');
     if (k === 'links') focusEnd('#f-newlink');
