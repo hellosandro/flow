@@ -257,7 +257,11 @@ body.grabbing, body.grabbing * { cursor: grabbing !important; }
 .card-menu .sub-open svg.i, .card-menu .sub-back svg.i { width: 14px; height: 14px; color: var(--label-3); flex: none; }
 .card-menu .sub-back { font-weight: 600; gap: 6px; }
 .card-menu .sub-back svg.i { color: var(--blue); }
-.card-menu .dot { display: inline-block; width: 14px; height: 14px; border-radius: 50%; background: var(--c); box-shadow: inset 0 0 0 1px rgba(0,0,0,.12); flex: none; }
+.card-menu .dot { display: inline-block; width: 16px; height: 16px; border-radius: 50%; background: var(--c); box-shadow: inset 0 0 0 1px rgba(0,0,0,.12); flex: none; }
+/* colore attuale: un anello intorno al pallino */
+.card-menu .mi[aria-checked="true"] .dot { box-shadow: 0 0 0 2px var(--surface), 0 0 0 3.5px var(--label); }
+.card-menu .mi { gap: 12px; }
+.card-menu .sub-open svg.i, .card-menu .mk.end { margin-left: auto; }
 /* tema Carta: le voci dei menu come quelle delle sezioni, maiuscole e spaziate */
 [data-skin="carta"] .menu .mi, [data-skin="carta"] .menu > button { font: 500 11px/1.3 var(--font); text-transform: uppercase; letter-spacing: .14em; padding: 11px 12px; }
 [data-skin="carta"] .menu .mi small { text-transform: none; letter-spacing: 0; }
@@ -1223,19 +1227,19 @@ function renderSheet(opts = {}) {
           ${ui.menu === 'move' ? `<div class="menu right card-menu" role="menu">
             <button type="button" class="mi sub-back" data-submenu="more">${ICON.chevl}Sposta in</button>
             <div class="menu-sep"></div>
-            ${state.columns.map(o => `<button type="button" class="mi" role="menuitemradio" aria-checked="${o.id === c.col}" data-moveto="${o.id}"><span class="mk">${o.id === c.col ? ICON.tick : ''}</span>${esc(o.title)}</button>`).join('')}
+            ${state.columns.map(o => `<button type="button" class="mi" role="menuitemradio" aria-checked="${o.id === c.col}" data-moveto="${o.id}">${esc(o.title)}<span class="mk end">${o.id === c.col ? ICON.tick : ''}</span></button>`).join('')}
           </div>` : ''}
           ${ui.menu === 'color' ? `<div class="menu right card-menu" role="menu">
             <button type="button" class="mi sub-back" data-submenu="more">${ICON.chevl}Colore</button>
             <div class="menu-sep"></div>
-            ${TINTS.map((n, i) => `<button type="button" class="mi" role="menuitemradio" aria-checked="${tintOf(c) === i}" data-color="${i}"><span class="mk">${tintOf(c) === i ? ICON.tick : ''}</span><i class="dot" style="--c: var(--pi-${i})"></i>${n}</button>`).join('')}
+            ${TINTS.map((n, i) => `<button type="button" class="mi" role="menuitemradio" aria-checked="${tintOf(c) === i}" data-color="${i}"><i class="dot" style="--c: var(--pi-${i})"></i>${n}</button>`).join('')}
           </div>` : ''}
           ${ui.menu === 'more' ? `<div class="menu right card-menu" role="menu">
-            <button type="button" class="mi sub-open" data-submenu="move" aria-haspopup="menu"><span class="mk"></span>Sposta in<small>${esc(colOf(c.col)?.title || '')}</small>${ICON.chevr}</button>
-            ${document.documentElement.dataset.skin === 'carta' ? `<button type="button" class="mi sub-open" data-submenu="color" aria-haspopup="menu"><span class="mk"></span>Colore<small><i class="dot" style="--c: var(--pi-${tintOf(c)})"></i></small>${ICON.chevr}</button>` : ''}
+            <button type="button" class="mi sub-open" data-submenu="move" aria-haspopup="menu">Sposta in${ICON.chevr}</button>
+            ${document.documentElement.dataset.skin === 'carta' ? `<button type="button" class="mi sub-open" data-submenu="color" aria-haspopup="menu">Cambia colore${ICON.chevr}</button>` : ''}
             <div class="menu-sep"></div>
-            ${MODULES[ui.tab] ? `<button type="button" class="mi danger" data-rmmodule="${ui.tab}"><span class="mk"></span>Elimina ${MODULES[ui.tab].toLowerCase()}</button>` : ''}
-            <button type="button" class="mi danger" data-delete><span class="mk"></span>Elimina scheda</button>
+            ${MODULES[ui.tab] ? `<button type="button" class="mi danger" data-rmmodule="${ui.tab}">Elimina ${MODULES[ui.tab].toLowerCase()}</button>` : ''}
+            <button type="button" class="mi danger" data-delete>Elimina scheda</button>
           </div>` : ''}
         </div>
         <button class="icon-btn bar-btn close-btn" type="button" data-close aria-label="Chiudi" title="Chiudi">${ICON.x}</button>
