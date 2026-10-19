@@ -97,7 +97,6 @@ svg.i { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-widt
   border-radius: 6px;
 }
 .board-title:focus { outline: none; box-shadow: 0 0 0 2px var(--blue); }
-.board-meta { font: var(--t-sub); color: var(--label-2); margin: 0; font-variant-numeric: tabular-nums; }
 
 /* Controllo segmentato (solo telefono) */
 .seg-wrap { padding-left: var(--gutter-l); padding-right: var(--gutter-r); padding-block: 0 10px; display: none; }
@@ -519,7 +518,6 @@ body.grabbing, body.grabbing * { cursor: grabbing !important; }
       <span class="proto">Prototipo · dati di esempio</span>
     </div>
     <h1 style="margin:0"><input id="board-title" class="board-title" aria-label="Titolo della bacheca" spellcheck="false"></h1>
-    <p class="board-meta" id="board-meta"></p>
   </header>
   <div class="seg-wrap"><nav class="seg" id="seg" aria-label="Colonne"></nav></div>
   <main class="board" id="board"></main>
@@ -671,7 +669,6 @@ function cardHTML(c, col) {
 
 function renderBoard() {
   $('#board-title').value = state.title;
-  $('#board-meta').textContent = `Creata il ${fmtLong(state.created)}`;
   const keepScroll = boardEl.scrollLeft;
   boardEl.innerHTML = state.columns.map(col => {
     const cards = state.cards.filter(c => c.col === col.id);
