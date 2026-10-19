@@ -171,9 +171,12 @@ body.grabbing, body.grabbing * { cursor: grabbing !important; }
 .check-done { color: var(--green); }
 .ph { border-radius: var(--r-card); background: var(--fill); border: 1.5px dashed var(--fill-strong); }
 
-.add { display: flex; align-items: center; gap: 6px; margin: 4px 4px 0; padding: 8px; border-radius: 10px; color: var(--label-2); font: var(--t-body); text-align: left; }
+.add { display: flex; align-items: center; gap: 6px; margin: 4px 4px 0; padding: 10px 12px; border-radius: 10px; color: var(--label-2); font: var(--t-body); text-align: left; }
 .add:hover { background: var(--fill); color: var(--label); }
 .add-form { margin: 4px 4px 0; }
+/* Colonna vuota: il pulsante prende il posto della prima scheda, alla stessa altezza delle schede accanto */
+.list:empty { min-height: 0; padding-bottom: 0; }
+.list:empty + .add, .list:empty + .add-form { margin-top: 0; }
 .add-form textarea {
   width: 100%; resize: none; border: 0; border-radius: var(--r-card);
   background: var(--surface); box-shadow: 0 0 0 2px var(--blue);
