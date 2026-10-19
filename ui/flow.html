@@ -91,6 +91,9 @@
   --t-sub: 400 13px/1.4 var(--font);
   --t-cap: 500 11px/1.35 var(--font);
   --caps: .18em;
+  /* post-it: toni carta smorzati */
+  --pi-0: #EADFC4; --pi-1: #E6A9A2; --pi-2: #AFC1D1; --pi-3: #C9A9AE; --pi-4: #C3D6B4; --pi-5: #F2C29E;
+  --pi-ink: #1E1E1E;
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
@@ -618,15 +621,30 @@ body.grabbing, body.grabbing * { cursor: grabbing !important; }
 [data-skin="carta"] .col { border-radius: 0; }
 [data-skin="carta"] .col-title, [data-skin="carta"] .col-title input { text-align: center; }
 [data-skin="carta"] .col-title input { text-transform: inherit; letter-spacing: inherit; }
-[data-skin="carta"] .list { gap: 0; padding: 0 4px; }
-[data-skin="carta"] .card { border-radius: 0; box-shadow: none; background: transparent; border-bottom: 1px solid var(--sep); padding: 13px 2px 12px; }
-[data-skin="carta"] .card:hover { box-shadow: none; background: var(--fill); }
-[data-skin="carta"] .card-title { font-weight: 400; }
+/* schede come post-it: blocchi di colore pieno, niente linee */
+[data-skin="carta"] .list { gap: 10px; padding: 12px 4px 6px; }
+[data-skin="carta"] .card {
+  background: var(--pi, var(--pi-0)); color: var(--pi-ink); border: 0; border-radius: 2px;
+  padding: 14px 14px 16px; min-height: 68px;
+  box-shadow: 0 1px 1px rgba(0,0,0,.05), 0 8px 14px -10px rgba(0,0,0,.35);
+  transition: transform .15s, box-shadow .15s;
+}
+[data-skin="carta"] .card:hover { transform: translateY(-2px) rotate(-.6deg); box-shadow: 0 1px 1px rgba(0,0,0,.05), 0 14px 22px -12px rgba(0,0,0,.4); }
+[data-skin="carta"] .ghost { transform-origin: 30% 20%; }
+[data-skin="carta"] .card-title { font-weight: 500; color: var(--pi-ink); }
+[data-skin="carta"] .col[data-type="fatto"] .card { opacity: .55; }
+[data-skin="carta"] .col[data-type="fatto"] .card-title { color: var(--pi-ink); }
+[data-skin="carta"] .card .meta { color: rgba(0,0,0,.6); }
+[data-skin="carta"] .card .due-soon, [data-skin="carta"] .card .due-late { background: rgba(255,255,255,.6); padding: 2px 7px 2px 5px; border-radius: 99px; }
+[data-skin="carta"] .card .due-soon { color: #A04E00; }
+[data-skin="carta"] .card .due-late { color: #B3261E; }
+[data-skin="carta"] .card .lab { color: rgba(0,0,0,.6); }
+[data-skin="carta"] .card .av { box-shadow: none; }
 [data-skin="carta"] .lab { background: none; padding: 0; color: var(--label-2); font-size: 10px; text-transform: uppercase; letter-spacing: .14em; }
 [data-skin="carta"] .lab::before { content: ""; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--c); margin-right: 5px; vertical-align: 1px; }
 [data-skin="carta"] .ph { border-radius: 0; border-style: dashed; border-width: 1px; }
 [data-skin="carta"] .add, [data-skin="carta"] .add-form textarea { border-radius: 0; padding: 13px 2px 12px; }
-[data-skin="carta"] .add { margin: 0 4px; }
+[data-skin="carta"] .add { margin: 4px 4px 0; }
 [data-skin="carta"] .add:hover { background: none; }
 [data-skin="carta"] .col-new .add { border: 0; border-bottom: 1px dashed var(--label-3); justify-content: flex-start; }
 [data-skin="carta"] .home-grid { gap: 28px 24px; }
@@ -938,7 +956,9 @@ function cardHTML(c, col) {
   if (full && on('links') && c.links.length) meta.push(`<span aria-label="Link">${ICON.link}${c.links.length}</span>`);
   if (full && c.messages?.length) meta.push(`<span aria-label="Messaggi">${ICON.msg}${c.messages.length}</span>`);
   if (full && on('members') && c.members?.length) meta.push(avatars(c.members));
-  return `<article class="card" tabindex="0" data-card="${c.id}">
+  /* colore del post-it (tema Carta): sempre lo stesso per la stessa scheda */
+  const tint = [...c.id].reduce((n, ch) => n + ch.charCodeAt(0), 0) % 6;
+  return `<article class="card" tabindex="0" data-card="${c.id}" style="--pi: var(--pi-${tint})">
     ${labs.length ? `<div class="labels">${labs.map(l => `<span class="lab" style="--c:${l.color}">${esc(l.name)}</span>`).join('')}</div>` : ''}
     <h3 class="card-title">${esc(c.title)}</h3>
     ${meta.length ? `<div class="meta">${meta.join('')}</div>` : ''}
