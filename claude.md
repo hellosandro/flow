@@ -86,7 +86,7 @@ Regole dei moduli:
 - **Eliminare** un modulo si fa dal menu "…" della scheda (in alto a destra): mostra **Elimina [nome della sezione aperta]** sopra *Elimina scheda*. Non ci sono altri "…" nelle sezioni. Se il modulo ha contenuto, un avviso chiede conferma dicendo cosa si perde (es. "I 5 elementi verranno cancellati definitivamente"), con **Annulla** come scelta predefinita.
 - La descrizione si legge già formattata; toccandola si apre la modifica, con una barra di formattazione (Tt▾ per i titoli, grassetto, corsivo▾ per gli altri stili, elenchi▾, link) e i pulsanti **Salva** e **Annulla**. Scrivere "- " o "1. " a inizio riga crea un elenco. Il testo incollato entra senza formattazione.
 - La checklist è nello stile di Trello: barra di avanzamento con percentuale, quadratini da spuntare, elementi fatti barrati.
-- In alto a destra ci sono due icone: **"…"** apre un menu con **Sposta in ›** (un sottomenu con l'elenco delle colonne e la spunta su quella attuale; accanto alla voce si legge la colonna attuale), **Colore ›** (solo nel tema Carta: sottomenu con i sei colori, pallino e nome) ed **Elimina scheda** (in rosso, con avviso di conferma); **✕** chiude la scheda.
+- In alto a destra ci sono due icone: **"…"** apre un menu con **Sposta in ›** (un sottomenu con l'elenco delle colonne e la spunta a destra su quella attuale), **Cambia colore ›** (solo nel tema Carta: sottomenu con i sei colori, pallino e nome; il colore attuale ha un anello intorno al pallino) ed **Elimina scheda** (in rosso, con avviso di conferma); **✕** chiude la scheda.
 
 Azioni sulle schede:
 - creare, modificare, eliminare;
