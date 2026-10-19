@@ -144,17 +144,27 @@ links           id, card_id, url, titolo, posizione
 
 ## 7. Fasi
 
-1. **Prototipo visivo** con dati di esempio, per definire tipografia e stile.
-2. **Progetto Next.js** con login a password e database Neon collegato.
-3. **Bacheche, colonne, schede** con tutte le funzioni della sezione 3.
-4. **Pubblicazione** su Vercel.
+1. ✅ **Prototipo visivo** con dati di esempio, per definire tipografia e stile.
+2. ✅ **Progetto Next.js** con login a password e database Neon collegato.
+3. ✅ **Bacheche, colonne, schede** con le funzioni della sezione 3 (manca il riordino delle bacheche e delle colonne).
+4. ✅ **Pubblicazione** su Vercel: https://flow-s3.vercel.app (progetto `flow`, si aggiorna a ogni modifica del ramo `main`).
 5. **Dominio personale** (facoltativo).
 
 ## 8. Note per chi sviluppa
 
 - Il proprietario **non è uno sviluppatore**. I passaggi che deve fare lui vanno spiegati in modo semplice, passo per passo: creazione del progetto su Vercel, collegamento di Neon, impostazione di `FLOW_PASSWORD`, dominio.
 - Orari e date sempre nel fuso orario italiano (CET/CEST).
-- Salvataggi immediati e ottimistici: l'interfaccia si aggiorna subito e salva in background. Se il salvataggio non riesce, lo segnala.
+- Salvataggi immediati e ottimistici: l'interfaccia si aggiorna subito e salva in background. Se il salvataggio non riesce, lo segnala (avviso rosso in basso) e riprova.
+
+### Com'è fatto il codice
+- `ui/flow.html`: tutta l'interfaccia (HTML, CSS e JavaScript senza librerie). `ui/login.html`: la schermata di accesso.
+- `scripts/build-ui.mjs` le avvolge in un documento completo e le scrive in `lib/ui-html.ts` (generato, non va modificato né salvato su Git); le route `app/route.ts` (`/`) e `app/login/route.ts` le restituiscono.
+- `middleware.ts` + `lib/auth.ts`: senza il cookie di sessione (`flow_session`, firmato con `FLOW_PASSWORD`, 30 giorni) le pagine portano a `/login` e le API rispondono 401. Cambiando la password, tutti i dispositivi devono rientrare.
+- API: `GET /api/state` (tutte le bacheche), `PUT /api/boards/:id` (salva una bacheca intera, in una transazione), `DELETE /api/boards/:id`, `POST /api/login`, `POST /api/logout`.
+- `lib/schema.ts` (Drizzle) segue la sezione 6; le migrazioni stanno in `drizzle/` (`npm run db:generate` dopo una modifica allo schema) e vengono applicate da `scripts/migrate.mjs` a ogni pubblicazione su Vercel.
+- Il database si legge da `DATABASE_URL` (o `POSTGRES_URL`), aggiunta da Vercel con l'integrazione Neon.
+- L'interfaccia salva solo le bacheche cambiate e, tornando sulla pagina, ricarica i dati per vedere le modifiche fatte da un altro dispositivo. Se le API non esistono (anteprima senza server) salva nel browser.
+- Prima di aprire FLOW ai clienti (sezione 9) va aggiunta la pulizia dell'HTML di descrizioni e messaggi lato server.
 
 ## 9. Dopo la beta: condivisione con i clienti
 
