@@ -404,6 +404,7 @@ body.grabbing, body.grabbing * { cursor: grabbing !important; }
 }
 
 /* Pagina iniziale */
+.home-empty { font: var(--t-body); color: var(--label-2); margin: 4px 0 0; }
 .home { height: 100%; overflow-y: auto; }
 .brand { font: 700 12px/1 var(--font); letter-spacing: .16em; color: var(--label-2); }
 .home-title { font: var(--t-large); letter-spacing: -.022em; margin: 0; }
@@ -578,9 +579,10 @@ body.grabbing, body.grabbing * { cursor: grabbing !important; }
   <header class="top">
     <div class="nav">
       <span class="brand">FLOW</span>
-      <span class="proto">Prototipo · dati di esempio</span>
+      <span class="proto">Versione di prova</span>
     </div>
     <h1 class="home-title">Bacheche</h1>
+    <p class="home-empty" id="home-empty" hidden>Nessuna bacheca. Creane una per il tuo primo progetto o cliente.</p>
   </header>
   <main class="home-grid" id="home-grid"></main>
   <div id="home-alert"></div>
@@ -591,7 +593,7 @@ body.grabbing, body.grabbing * { cursor: grabbing !important; }
     <div class="nav">
       <button class="back" type="button"><svg class="i" viewBox="0 0 16 16"><path d="M10 3 5 8l5 5"/></svg>Bacheche</button>
       <div class="nav-right">
-        <span class="proto">Prototipo · dati di esempio</span>
+        <span class="proto">Versione di prova</span>
         <div class="view-wrap">
           <button class="icon-btn" type="button" id="view-btn" aria-label="Vista delle schede" aria-haspopup="menu" aria-expanded="false" title="Vista delle schede">
             <svg class="i" viewBox="0 0 16 16"><path d="M1.5 8s2.5-4.5 6.5-4.5S14.5 8 14.5 8 12 12.5 8 12.5 1.5 8 1.5 8z"/><circle cx="8" cy="8" r="2"/></svg>
@@ -621,8 +623,7 @@ const fmtShort = iso => new Intl.DateTimeFormat('it-IT', { day: 'numeric', month
 const fmtLong = iso => new Intl.DateTimeFormat('it-IT', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(iso + 'T00:00:00Z'));
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-let uid = 1;
-const id = () => 'k' + (uid++);
+const id = () => 'k' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
 const ICON = {
   cal: '<svg class="i" viewBox="0 0 16 16"><rect x="2.5" y="3.5" width="11" height="10" rx="2"/><path d="M2.5 6.5h11M5.5 2v3M10.5 2v3"/></svg>',
   check: '<svg class="i" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.75"/><path d="m5.6 8.2 1.7 1.7 3.2-3.6"/></svg>',
@@ -641,85 +642,12 @@ const ICON = {
 };
 const host = u => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch { return u; } };
 
-/* Dati di esempio: le scadenze sono relative a oggi, così il prototipo mostra sempre tutti gli stati */
-const L = { logo: id(), stampa: id(), web: id(), admin: id(), urg: id() };
-const C = { io: id(), cli: id(), fatto: id(), sb: id(), perp: id() };
-const items = list => list.map(([text, done]) => ({ id: id(), text, done: !!done }));
-let state = {
-  title: 'Cantina Valori',
-  view: 'essential',
-  created: addDays(today, -16),
-  labels: [
-    { id: L.logo, name: 'Logo', color: 'var(--blue)' },
-    { id: L.stampa, name: 'Stampa', color: 'var(--orange)' },
-    { id: L.web, name: 'Web', color: 'var(--teal)' },
-    { id: L.admin, name: 'Amministrazione', color: 'var(--purple)' },
-    { id: L.urg, name: 'Urgente', color: 'var(--red)' }
-  ],
-  people: [
-    { id: 'p-io', name: 'Io', role: 'Proprietario', initials: 'IO', me: true },
-    { id: 'p-marco', name: 'Marco Valori', role: 'Cliente · Cantina Valori', initials: 'MV' },
-    { id: 'p-giulia', name: 'Giulia Valori', role: 'Cliente · Cantina Valori', initials: 'GV' }
-  ],
-  columns: [
-    { id: C.io, title: 'In corso', type: 'in_corso' },
-    { id: C.cli, title: 'In revisione', type: 'in_revisione' },
-    { id: C.fatto, title: 'Fatto', type: 'fatto' },
-    { id: C.sb, title: 'Stand by', type: 'variabile' },
-    { id: C.perp, title: 'Perpetue', type: 'variabile' }
-  ],
-  cards: [
-    { col: C.io, title: 'Bozze etichetta Riserva 2023', labels: [L.stampa], due: addDays(today, 2),
-      notes: '<p>Tre direzioni per l’etichetta, formato <b>90 × 120 mm</b>:</p><ul><li>tipografica</li><li>illustrata</li><li>solo carta goffrata, senza colore</li></ul><h3>Da ricordare</h3><p>Il cliente vuole vedere <i>almeno una</i> versione con l’oro a caldo.</p>',
-      checklist: items([['Ricerca riferimenti', 1], ['Prima direzione', 1], ['Seconda direzione'], ['Terza direzione'], ['Impaginare presentazione']]),
-      links: [{ id: id(), url: 'https://www.are.na/', title: 'Moodboard su Are.na' }] },
-    { col: C.io, title: 'Palette colori linea bianchi', labels: [L.logo], due: addDays(today, -1), notes: '',
-      checklist: items([['Campionare la carta', 1], ['Prove Pantone'], ['Prova di stampa']]), links: [] },
-    { col: C.io, title: 'Preventivo sito vetrina', labels: [L.admin, L.web], due: addDays(today, 6),
-      notes: 'Cinque pagine, schede vini, form contatti. Niente e-commerce per ora.', checklist: [], links: [] },
-    { col: C.cli, title: 'Testi retro etichetta per i 5 vini', labels: [L.stampa], due: today,
-      notes: 'Chiesti a Marco il 12 ottobre. Servono anche gradazione e allergeni.', checklist: [], links: [] },
-    { col: C.cli, title: 'Approvazione logo definitivo', labels: [L.logo, L.urg], due: addDays(today, 1), notes: '', checklist: [], links: [
-      { id: id(), url: 'https://www.figma.com/', title: 'Logo v4 su Figma' }] },
-    { col: C.cli, title: 'Foto del vigneto in alta risoluzione', labels: [L.web], due: null, notes: '', checklist: [], links: [] },
-    { col: C.fatto, title: 'Moodboard e direzione visiva', labels: [L.logo], due: addDays(today, -8), notes: '',
-      checklist: items([['Raccolta', 1], ['Selezione', 1], ['Presentazione', 1], ['Feedback', 1]]), links: [] },
-    { col: C.fatto, title: 'Brief e incontro di avvio', labels: [], due: null, notes: 'Incontro in cantina il 2 ottobre.', checklist: [], links: [] },
-    { col: C.sb, title: 'Packaging cassetta in legno', labels: [L.stampa], due: null, notes: 'Il cliente vuole riparlarne a gennaio.', checklist: [], links: [] },
-    { col: C.perp, title: 'Post Instagram del mese', labels: [L.web], due: addDays(today, 12), notes: '',
-      checklist: items([['Piano editoriale', 1], ['Grafiche'], ['Testi'], ['Programmazione']]), links: [] }
-  ].map(c => ({ id: id(), messages: [], members: [], ...c })),
-  adding: null,
-  open: null
-};
-
-/* Messaggi di esempio con il cliente */
-{
-  const H = 36e5, byTitle = t => state.cards.find(c => c.title === t);
-  byTitle('Approvazione logo definitivo').messages = [
-    { me: false, name: 'Marco Valori', text: 'Ciao! Abbiamo visto la v4 del logo. A mio padre piace molto, io sono ancora indeciso sul verde.', at: Date.now() - 26 * H },
-    { me: true, name: 'Io', text: 'Grazie Marco. Vi preparo una variante con il verde più scuro, così confrontate le due.', at: Date.now() - 25 * H },
-    { me: false, name: 'Marco Valori', text: 'Perfetto, la giriamo anche all’enologo. Vi rispondiamo entro domani.', at: Date.now() - 3 * H }
-  ];
-  byTitle('Testi retro etichetta per i 5 vini').messages = [
-    { me: true, name: 'Io', text: 'Ciao Marco, mi mandi i testi per il retro dei cinque vini? Servono anche gradazione e allergeni.', at: Date.now() - 140 * H },
-    { me: false, name: 'Marco Valori', text: 'Sì, li sta scrivendo Giulia. Arrivano a breve.', at: Date.now() - 50 * H }
-  ];
-  byTitle('Bozze etichetta Riserva 2023').members = ['p-io'];
-  byTitle('Approvazione logo definitivo').members = ['p-io', 'p-marco'];
-  byTitle('Testi retro etichetta per i 5 vini').members = ['p-marco', 'p-giulia'];
-  for (const c of state.cards) if (c.notes && !c.notes.startsWith('<')) c.notes = `<p>${esc(c.notes)}</p>`;
-  for (const c of state.cards) c.modules = [c.checklist.length && 'checklist', c.links.length && 'links', c.due && 'due', c.labels.length && 'labels', c.members.length && 'members'].filter(Boolean);
-  byTitle('Bozze etichetta Riserva 2023').messages = [
-    { me: false, name: 'Marco Valori', text: 'Possiamo vedere anche una versione su carta goffrata?', at: Date.now() - 20 * H }
-  ];
-  for (const c of state.cards) for (const m of c.messages) m.html ||= `<p>${esc(m.text)}</p>`;
-}
+let state = null;
 
 /* Ogni bacheca nasce con le tre colonne fisse e il set di etichette di base */
 function makeBoard(title, cards = []) {
   const b = {
-    id: id(), title, view: 'essential', adding: null, open: null,
+    id: id(), title, created: today, view: 'essential', adding: null, open: null,
     labels: [['Logo', 'blue'], ['Stampa', 'orange'], ['Web', 'teal'], ['Amministrazione', 'purple'], ['Urgente', 'red']].map(([name, c]) => ({ id: id(), name, color: `var(--${c})` })),
     people: [{ id: 'p-io', name: 'Io', role: 'Proprietario', initials: 'IO', me: true }],
     columns: [['In corso', 'in_corso'], ['In revisione', 'in_revisione'], ['Fatto', 'fatto']].map(([t, type]) => ({ id: id(), title: t, type }))
@@ -730,13 +658,18 @@ function makeBoard(title, cards = []) {
   }));
   return b;
 }
-state.id = id();
-const boards = [
-  state,
-  makeBoard('Studio Ferri Architetti', [[0, 'Wireframe della home e dei progetti', 1], [0, 'Selezione foto dei cantieri'], [1, 'Proposta di logotipo', -2], [2, 'Brief e preventivo']]),
-  makeBoard('Libreria Àncora', [[0, 'Copertina del catalogo 2027', 9], [0, 'Segnalibri per Natale'], [1, 'Bozza della vetrina di dicembre']]),
-  makeBoard('Personale', [[0, 'Aggiornare il portfolio'], [0, 'Rinnovo del dominio', 5], [2, 'Biglietti da visita']])
-];
+/* I dati restano salvati in questo browser, su questo dispositivo, finché non arriva il database (fase 2) */
+const STORE = 'flow-v1';
+let boards = [];
+try { boards = JSON.parse(localStorage.getItem(STORE))?.boards || []; } catch {}
+for (const b of boards) { b.open = null; b.adding = null; }
+let saveTimer = null;
+function persist() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => { try { localStorage.setItem(STORE, JSON.stringify({ boards })); } catch {} }, 250);
+}
+document.addEventListener('input', persist);
+addEventListener('pagehide', () => { try { localStorage.setItem(STORE, JSON.stringify({ boards })); } catch {} });
 
 const $ = s => document.querySelector(s);
 const personOf = pid => state.people.find(p => p.id === pid);
@@ -781,6 +714,7 @@ function cardHTML(c, col) {
 }
 
 function renderBoard() {
+  persist();
   $('#board-title').value = state.title;
   const keepScroll = boardEl.scrollLeft;
   boardEl.innerHTML = state.columns.map(col => {
@@ -987,6 +921,7 @@ function panelHTML(c) {
 }
 
 function renderSheet(opts = {}) {
+  persist();
   const c = cardOf(state.open);
   if (!c) { sheetEl.hidden = true; sheetEl.innerHTML = ''; return; }
   if (MODULES[ui.tab] && !c.modules.includes(ui.tab)) ui.tab = 'desc';
@@ -1504,6 +1439,8 @@ function urgentOf(b) {
   return { late, soon };
 }
 function renderHome() {
+  persist();
+  $('#home-empty').hidden = boards.length > 0;
   $('#home-grid').innerHTML = boards.map(b => {
     const u = urgentOf(b);
     return `<article class="tile" role="button" tabindex="0" data-openboard="${b.id}">
@@ -1527,7 +1464,7 @@ function renderHome() {
   if (b) $('[data-homecancel]').focus();
 }
 function showHome() {
-  state.open = null; renderSheet();
+  if (state) { state.open = null; renderSheet(); }
   appEl.hidden = true; homeEl.hidden = false;
   renderHome();
 }
