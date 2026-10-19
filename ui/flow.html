@@ -1,5 +1,9 @@
 <title>FLOW · Bacheca</title>
 <meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geologica:wght@300;400;500;600&display=swap">
+<script>try { document.documentElement.dataset.skin = localStorage.getItem('flow-skin') || 'sistema'; } catch {}</script>
 <style>
 /* Layout: barra in alto con titolo grande in stile iOS, sotto le colonne affiancate a larghezza fissa che scorrono in orizzontale, come su Trello, anche su telefono. */
 :root {
@@ -21,6 +25,7 @@
   --card-shadow: 0 0 0 .5px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.05);
   --lift-shadow: 0 0 0 .5px rgba(0,0,0,.06), 0 12px 32px rgba(0,0,0,.14);
   --scrim: rgba(0,0,0,.28);
+  --on-accent: #fff;
 
   --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -63,6 +68,45 @@
   --card-shadow: 0 0 0 .5px rgba(255,255,255,.06);
   --lift-shadow: 0 0 0 .5px rgba(255,255,255,.1), 0 12px 32px rgba(0,0,0,.6);
   --scrim: rgba(0,0,0,.55);
+  color-scheme: dark;
+}
+
+/* ——— Tema Carta: come un planner stampato. Bianco e nero, linee sottili, titoli in maiuscolo spaziato, Geologica.
+   Il colore resta solo dove ha un significato (scadenze, etichette). ——— */
+:root[data-skin="carta"] {
+  --bg: #FFFFFF; --surface: #FFFFFF;
+  --fill: #F3F3F3; --fill-strong: #E8E8E8;
+  --label: #141414; --label-2: #6E6E6E; --label-3: #ABABAB;
+  --sep: #E4E4E4; --rule: #141414;
+  --blue: #141414; --on-accent: #FFFFFF;
+  --card-shadow: none;
+  --lift-shadow: 0 0 0 1px #141414, 0 18px 40px rgba(0,0,0,.08);
+  --scrim: rgba(250,250,250,.72);
+  --font: "Geologica", -apple-system, BlinkMacSystemFont, system-ui, "Segoe UI", Roboto, Arial, sans-serif;
+  --font-display: var(--font);
+  --t-large: 400 26px/1.2 var(--font);
+  --t-title: 500 19px/1.3 var(--font);
+  --t-head: 500 14px/1.35 var(--font);
+  --t-body: 400 15px/1.45 var(--font);
+  --t-sub: 400 13px/1.4 var(--font);
+  --t-cap: 500 11px/1.35 var(--font);
+  --caps: .18em;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-skin="carta"]:not([data-theme="light"]) {
+    --bg: #0F0F0F; --surface: #0F0F0F; --fill: #1C1C1C; --fill-strong: #262626;
+    --label: #EDEDED; --label-2: #9A9A9A; --label-3: #5E5E5E; --sep: #262626; --rule: #EDEDED;
+    --blue: #EDEDED; --on-accent: #0F0F0F;
+    --lift-shadow: 0 0 0 1px #EDEDED, 0 18px 40px rgba(0,0,0,.5); --scrim: rgba(0,0,0,.6);
+    color-scheme: dark;
+  }
+}
+:root[data-skin="carta"][data-theme="dark"] {
+  --bg: #0F0F0F; --surface: #0F0F0F; --fill: #1C1C1C; --fill-strong: #262626;
+  --label: #EDEDED; --label-2: #9A9A9A; --label-3: #5E5E5E; --sep: #262626; --rule: #EDEDED;
+  --blue: #EDEDED; --on-accent: #0F0F0F;
+  --lift-shadow: 0 0 0 1px #EDEDED, 0 18px 40px rgba(0,0,0,.5); --scrim: rgba(0,0,0,.6);
   color-scheme: dark;
 }
 
@@ -226,7 +270,7 @@ body.grabbing, body.grabbing * { cursor: grabbing !important; }
 .row input.inline { flex: 1; min-width: 0; border: 0; background: none; padding: 11px 0; font: var(--t-body); }
 .row input.inline:focus { outline: none; }
 .row input.inline::placeholder, .notes::placeholder { color: var(--label-3); }
-.tick { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--label-3); display: grid; place-items: center; flex: none; color: #fff; }
+.tick { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--label-3); display: grid; place-items: center; flex: none; color: var(--on-accent); }
 .tick[aria-pressed="true"] { background: var(--blue); border-color: var(--blue); }
 .tick svg.i { width: 12px; height: 12px; stroke-width: 2.4; opacity: 0; }
 .tick[aria-pressed="true"] svg.i { opacity: 1; }
@@ -445,7 +489,7 @@ body.grabbing, body.grabbing * { cursor: grabbing !important; }
 .bar.full i { background: var(--green); }
 .cl-item { display: flex; align-items: flex-start; gap: 10px; padding: 5px 8px; margin: 0 -8px; border-radius: 8px; }
 .cl-item:hover, .cl-item:focus-within { background: var(--fill); }
-.cb { width: 16px; height: 16px; margin-top: 3px; border-radius: 4px; border: 1.5px solid var(--label-3); display: grid; place-items: center; flex: none; color: #fff; }
+.cb { width: 16px; height: 16px; margin-top: 3px; border-radius: 4px; border: 1.5px solid var(--label-3); display: grid; place-items: center; flex: none; color: var(--on-accent); }
 .cb svg.i { width: 11px; height: 11px; stroke-width: 2.6; opacity: 0; }
 .cb[aria-pressed="true"] { background: var(--blue); border-color: var(--blue); }
 .cb[aria-pressed="true"] svg.i { opacity: 1; }
@@ -495,7 +539,7 @@ body.grabbing, body.grabbing * { cursor: grabbing !important; }
 .rte-bar.mini .rte-menu { top: auto; bottom: calc(100% + 4px); }
 .composer input { flex: 1; min-width: 0; border: .5px solid var(--sep); background: var(--bg); border-radius: 99px; padding: 8px 14px; font: var(--t-body); }
 .composer input:focus { outline: none; border-color: var(--blue); }
-.send { width: 32px; height: 32px; border-radius: 50%; background: var(--blue); color: #fff; display: grid; place-items: center; flex: none; }
+.send { width: 32px; height: 32px; border-radius: 50%; background: var(--blue); color: var(--on-accent); display: grid; place-items: center; flex: none; }
 .send svg.i { width: 16px; height: 16px; stroke-width: 2.2; }
 
 @media (max-width: 720px) {
@@ -520,7 +564,7 @@ body.grabbing, body.grabbing * { cursor: grabbing !important; }
 .desc-edit:focus { outline: none; }
 .desc-edit::placeholder { color: var(--label-3); }
 .desc-actions { display: flex; gap: 8px; margin-top: 10px; }
-.btn-fill { background: var(--blue); color: #fff; font: var(--t-sub); font-weight: 600; padding: 7px 14px; border-radius: 8px; }
+.btn-fill { background: var(--blue); color: var(--on-accent); font: var(--t-sub); font-weight: 600; padding: 7px 14px; border-radius: 8px; }
 .btn-plain { font: var(--t-sub); font-weight: 500; padding: 7px 10px; border-radius: 8px; color: var(--label-2); }
 .btn-plain:hover { background: var(--fill); color: var(--label); }
 
@@ -531,7 +575,7 @@ body.grabbing, body.grabbing * { cursor: grabbing !important; }
   background: var(--fill-strong); color: var(--label); font: 600 9.5px/1 var(--font); letter-spacing: .02em;
   box-shadow: 0 0 0 2px var(--surface);
 }
-.av.me { background: var(--blue); color: #fff; }
+.av.me { background: var(--blue); color: var(--on-accent); }
 .av + .av { margin-left: -5px; }
 .meta .avs { margin-left: auto; }
 .pills .avs { margin-left: 2px; }
@@ -547,6 +591,55 @@ body.grabbing, body.grabbing * { cursor: grabbing !important; }
 .member-row .mk { color: var(--blue); opacity: 0; }
 .member-row .mk svg.i { width: 16px; height: 16px; stroke-width: 2.2; }
 .member-row[aria-pressed="true"] .mk { opacity: 1; }
+
+/* Tema Carta: forme */
+[data-skin="carta"] .board-title, [data-skin="carta"] .home-title { text-transform: uppercase; letter-spacing: .2em; }
+[data-skin="carta"] .brand { color: var(--label); letter-spacing: .26em; }
+[data-skin="carta"] .back, [data-skin="carta"] .logout { font: var(--t-cap); text-transform: uppercase; letter-spacing: var(--caps); }
+[data-skin="carta"] .col-head { margin: 0 4px; padding: 6px 0 9px; border-bottom: 1px solid var(--rule); }
+[data-skin="carta"] .col-title { font: 600 11px/1.3 var(--font); text-transform: uppercase; letter-spacing: var(--caps); }
+[data-skin="carta"] .col { border-radius: 0; }
+[data-skin="carta"] .col-title input { text-transform: inherit; letter-spacing: inherit; }
+[data-skin="carta"] .list { gap: 0; padding: 0 4px; }
+[data-skin="carta"] .card { border-radius: 0; box-shadow: none; background: transparent; border-bottom: 1px solid var(--sep); padding: 13px 2px 12px; }
+[data-skin="carta"] .card:hover { box-shadow: none; background: var(--fill); }
+[data-skin="carta"] .card-title { font-weight: 400; }
+[data-skin="carta"] .lab { background: none; padding: 0; color: var(--label-2); font-size: 10px; text-transform: uppercase; letter-spacing: .14em; }
+[data-skin="carta"] .lab::before { content: ""; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--c); margin-right: 5px; vertical-align: 1px; }
+[data-skin="carta"] .ph { border-radius: 0; border-style: dashed; border-width: 1px; }
+[data-skin="carta"] .add, [data-skin="carta"] .add-form textarea { border-radius: 0; padding: 13px 2px 12px; }
+[data-skin="carta"] .add { margin: 0 4px; }
+[data-skin="carta"] .add:hover { background: none; }
+[data-skin="carta"] .col-new .add { border: 0; border-bottom: 1px dashed var(--label-3); justify-content: flex-start; }
+[data-skin="carta"] .home-grid { gap: 28px 24px; }
+[data-skin="carta"] .tile { border-radius: 0; box-shadow: none; background: none; border-top: 1px solid var(--rule); padding: 14px 0 12px; min-height: 96px; }
+[data-skin="carta"] .tile:hover { box-shadow: none; }
+[data-skin="carta"] .tile:hover h2 { color: var(--label-2); }
+[data-skin="carta"] .tile h2 { font: 500 13px/1.45 var(--font); text-transform: uppercase; letter-spacing: var(--caps); }
+[data-skin="carta"] .tile-new { border: 0; border-top: 1px dashed var(--label-3); border-radius: 0; justify-content: flex-start; align-items: flex-start; padding: 14px 0 12px; font: var(--t-cap); text-transform: uppercase; letter-spacing: var(--caps); }
+[data-skin="carta"] .tile-new:hover { background: none; }
+[data-skin="carta"] .sheet, [data-skin="carta"] .menu, [data-skin="carta"] .alert { border-radius: 2px; }
+[data-skin="carta"] .sidenav { background: var(--surface); }
+[data-skin="carta"] .nav-item { border-radius: 0; font: 500 11px/1.3 var(--font); text-transform: uppercase; letter-spacing: .14em; padding: 10px; }
+[data-skin="carta"] .nav-item .nm { letter-spacing: 0; text-transform: none; }
+[data-skin="carta"] .nav-item[aria-selected="true"] { font-weight: 600; }
+[data-skin="carta"] .f-title { font-weight: 500; }
+[data-skin="carta"] .sec-head, [data-skin="carta"] .g-head, [data-skin="carta"] .menu-head { letter-spacing: var(--caps); }
+[data-skin="carta"] .cb { border-radius: 50%; border-width: 1px; }
+[data-skin="carta"] .bar { height: 2px; border-radius: 0; }
+[data-skin="carta"] .bar i { border-radius: 0; }
+[data-skin="carta"] .bar.full i { background: var(--rule); }
+[data-skin="carta"] .msg-body, [data-skin="carta"] .msg.me .msg-body { border-radius: 0; background: none; border-left: 1px solid var(--rule); padding: 2px 0 2px 12px; }
+[data-skin="carta"] .msg.me .msg-body { border-left-color: var(--label-3); }
+[data-skin="carta"] .msg-input { border-radius: 0; border: 0; border-bottom: 1px solid var(--rule); background: none; padding-inline: 0; }
+[data-skin="carta"] .btn-fill { border-radius: 0; font: 600 11px/1 var(--font); text-transform: uppercase; letter-spacing: var(--caps); padding: 10px 14px; }
+[data-skin="carta"] .desc-empty { border-radius: 0; background: none; border: 1px dashed var(--label-3); }
+[data-skin="carta"] .rte { border-radius: 0; border-width: 1px; }
+[data-skin="carta"] .rte-bar, [data-skin="carta"] .rte-area { border-radius: 0; }
+[data-skin="carta"] .chip { border-radius: 0; }
+[data-skin="carta"] .add-item { border-radius: 0; background: none; border: 1px solid var(--sep); }
+[data-skin="carta"] .bar-actions .bar-btn { background: none; box-shadow: inset 0 0 0 1px var(--sep); }
+[data-skin="carta"] .save-status { border-radius: 0; }
 
 @keyframes fade { from { opacity: 0; } }
 @keyframes rise { from { transform: translateY(16px) scale(.98); opacity: 0; } }
@@ -571,7 +664,17 @@ body.grabbing, body.grabbing * { cursor: grabbing !important; }
   <header class="top">
     <div class="nav">
       <span class="brand">FLOW</span>
-      <button type="button" class="logout" id="logout">Esci</button>
+      <div class="nav-right">
+        <div class="view-wrap" id="skin-wrap">
+          <button type="button" class="logout" id="skin-btn" aria-haspopup="menu" aria-expanded="false">Tema</button>
+          <div class="menu right view-menu" id="skin-menu" role="menu" hidden>
+            <p class="menu-head">Tema</p>
+            <button type="button" class="mi" role="menuitemradio" data-skin-choice="sistema"><span class="mk"></span><span class="vt"><b>Sistema</b><small>Pulito e morbido, come le app Apple</small></span></button>
+            <button type="button" class="mi" role="menuitemradio" data-skin-choice="carta"><span class="mk"></span><span class="vt"><b>Carta</b><small>Bianco e nero a linee sottili, come un planner</small></span></button>
+          </div>
+        </div>
+        <button type="button" class="logout" id="logout">Esci</button>
+      </div>
     </div>
     <h1 class="home-title">Bacheche</h1>
     <p class="home-empty" id="home-empty" hidden>Nessuna bacheca. Creane una per il tuo primo progetto o cliente.</p>
@@ -1578,6 +1681,25 @@ homeEl.addEventListener('keydown', e => {
   if (tile && e.target === tile && e.key === 'Enter') openBoard(boards.find(b => b.id === tile.dataset.openboard));
 });
 $('.back').addEventListener('click', showHome);
+
+/* Tema: vale per questo dispositivo */
+const skinBtn = $('#skin-btn'), skinMenu = $('#skin-menu');
+function syncSkinMenu() {
+  const cur = document.documentElement.dataset.skin || 'sistema';
+  skinMenu.querySelectorAll('[data-skin-choice]').forEach(b => {
+    const on = b.dataset.skinChoice === cur;
+    b.setAttribute('aria-checked', String(on));
+    b.querySelector('.mk').innerHTML = on ? ICON.tick : '';
+  });
+}
+skinBtn.addEventListener('click', () => { skinMenu.hidden = !skinMenu.hidden; skinBtn.setAttribute('aria-expanded', String(!skinMenu.hidden)); syncSkinMenu(); });
+skinMenu.addEventListener('click', e => {
+  const b = e.target.closest('[data-skin-choice]'); if (!b) return;
+  document.documentElement.dataset.skin = b.dataset.skinChoice;
+  try { localStorage.setItem('flow-skin', b.dataset.skinChoice); } catch {}
+  syncSkinMenu();
+});
+document.addEventListener('click', e => { if (!e.target.closest('#skin-wrap')) { skinMenu.hidden = true; skinBtn.setAttribute('aria-expanded', 'false'); } });
 
 $('#logout').addEventListener('click', async () => {
   if (dirty.size || removed.size) await flush();
