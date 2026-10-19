@@ -90,6 +90,15 @@ svg.i { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-widt
 .nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .back { display: inline-flex; align-items: center; gap: 2px; color: var(--blue); font: var(--t-body); margin-left: -4px; }
 .back svg.i { width: 18px; height: 18px; stroke-width: 2; }
+.nav-right { display: flex; align-items: center; gap: 8px; }
+.view-wrap { position: relative; }
+.view-menu { top: 38px; min-width: 250px; z-index: 15; }
+.view-menu .menu-head { font: var(--t-cap); color: var(--label-2); padding: 8px 12px 4px; margin: 0; }
+.view-menu .mi { display: flex; align-items: flex-start; gap: 8px; }
+.view-menu .mk { padding-top: 3px; flex: none; }
+.view-menu .vt { display: grid; gap: 1px; }
+.view-menu .vt b { font: var(--t-body); font-weight: 500; }
+.view-menu .vt small { font: var(--t-cap); color: var(--label-2); margin: 0; padding: 0; }
 .proto { font: var(--t-cap); color: var(--label-2); background: var(--fill); padding: 3px 8px; border-radius: 99px; white-space: nowrap; }
 .board-title {
   font: var(--t-large); letter-spacing: -.022em;
@@ -515,7 +524,19 @@ body.grabbing, body.grabbing * { cursor: grabbing !important; }
   <header class="top">
     <div class="nav">
       <button class="back" type="button"><svg class="i" viewBox="0 0 16 16"><path d="M10 3 5 8l5 5"/></svg>Bacheche</button>
-      <span class="proto">Prototipo · dati di esempio</span>
+      <div class="nav-right">
+        <span class="proto">Prototipo · dati di esempio</span>
+        <div class="view-wrap">
+          <button class="icon-btn" type="button" id="view-btn" aria-label="Vista delle schede" aria-haspopup="menu" aria-expanded="false" title="Vista delle schede">
+            <svg class="i" viewBox="0 0 16 16"><path d="M1.5 8s2.5-4.5 6.5-4.5S14.5 8 14.5 8 12 12.5 8 12.5 1.5 8 1.5 8z"/><circle cx="8" cy="8" r="2"/></svg>
+          </button>
+          <div class="menu right view-menu" id="view-menu" role="menu" hidden>
+            <p class="menu-head">Vista delle schede</p>
+            <button type="button" class="mi" role="menuitemradio" data-view="essential"><span class="mk"></span><span class="vt"><b>Essenziale</b><small>Solo il titolo e le scadenze urgenti</small></span></button>
+            <button type="button" class="mi" role="menuitemradio" data-view="full"><span class="mk"></span><span class="vt"><b>Completa</b><small>Etichette, checklist, membri e altre informazioni</small></span></button>
+          </div>
+        </div>
+      </div>
     </div>
     <h1 style="margin:0"><input id="board-title" class="board-title" aria-label="Titolo della bacheca" spellcheck="false"></h1>
   </header>
@@ -560,6 +581,7 @@ const C = { io: id(), cli: id(), fatto: id(), sb: id(), perp: id() };
 const items = list => list.map(([text, done]) => ({ id: id(), text, done: !!done }));
 const state = {
   title: 'Cantina Valori',
+  view: 'essential',
   created: addDays(today, -16),
   labels: [
     { id: L.logo, name: 'Logo', color: 'var(--blue)' },
@@ -650,16 +672,19 @@ function dueInfo(due, done) {
 function cardHTML(c, col) {
   /* Un modulo nascosto (spunta tolta) non compare da nessuna parte, nemmeno la sua scadenza */
   const on = k => !c.modules || c.modules.includes(k);
-  const labs = on('labels') ? c.labels.map(labelOf).filter(Boolean) : [];
-  const due = on('due') ? dueInfo(c.due, col.type === 'fatto') : null;
-  const total = on('checklist') ? c.checklist.length : 0, done = c.checklist.filter(i => i.done).length;
+  /* Vista essenziale: solo il titolo, più la scadenza quando è vicina o passata */
+  const full = state.view === 'full';
+  const labs = full && on('labels') ? c.labels.map(labelOf).filter(Boolean) : [];
+  let due = on('due') ? dueInfo(c.due, col.type === 'fatto') : null;
+  if (!full && due && !due.cls) due = null;
+  const total = full && on('checklist') ? c.checklist.length : 0, done = c.checklist.filter(i => i.done).length;
   const meta = [];
   if (due) meta.push(`<span class="${due.cls}">${ICON.cal}${esc(due.text)}</span>`);
   if (total) meta.push(`<span class="${done === total ? 'check-done' : ''}">${ICON.check}${done}/${total}</span>`);
-  if (c.notes) meta.push(`<span aria-label="Ha delle note">${ICON.note}</span>`);
-  if (on('links') && c.links.length) meta.push(`<span aria-label="Link">${ICON.link}${c.links.length}</span>`);
-  if (c.messages?.length) meta.push(`<span aria-label="Messaggi">${ICON.msg}${c.messages.length}</span>`);
-  if (on('members') && c.members?.length) meta.push(avatars(c.members));
+  if (full && c.notes) meta.push(`<span aria-label="Ha delle note">${ICON.note}</span>`);
+  if (full && on('links') && c.links.length) meta.push(`<span aria-label="Link">${ICON.link}${c.links.length}</span>`);
+  if (full && c.messages?.length) meta.push(`<span aria-label="Messaggi">${ICON.msg}${c.messages.length}</span>`);
+  if (full && on('members') && c.members?.length) meta.push(avatars(c.members));
   return `<article class="card" tabindex="0" data-card="${c.id}">
     ${labs.length ? `<div class="labels">${labs.map(l => `<span class="lab" style="--c:${l.color}">${esc(l.name)}</span>`).join('')}</div>` : ''}
     <h3 class="card-title">${esc(c.title)}</h3>
@@ -982,6 +1007,24 @@ segEl.addEventListener('click', e => {
   boardEl.scrollTo({ left: col.offsetLeft - boardEl.offsetLeft - parseFloat(getComputedStyle(boardEl).paddingLeft), behavior: 'smooth' });
 });
 boardEl.addEventListener('scroll', updateSeg, { passive: true });
+
+/* Vista delle schede: Essenziale o Completa, per bacheca */
+const viewBtn = $('#view-btn'), viewMenu = $('#view-menu');
+function syncViewMenu() {
+  viewMenu.querySelectorAll('[data-view]').forEach(b => {
+    const on = b.dataset.view === state.view;
+    b.setAttribute('aria-checked', String(on));
+    b.querySelector('.mk').innerHTML = on ? ICON.tick : '';
+  });
+}
+viewBtn.addEventListener('click', () => {
+  viewMenu.hidden = !viewMenu.hidden; viewBtn.setAttribute('aria-expanded', String(!viewMenu.hidden)); syncViewMenu();
+});
+viewMenu.addEventListener('click', e => {
+  const b = e.target.closest('[data-view]'); if (!b) return;
+  state.view = b.dataset.view; viewMenu.hidden = true; viewBtn.setAttribute('aria-expanded', 'false'); renderBoard();
+});
+document.addEventListener('click', e => { if (!e.target.closest('.view-wrap')) { viewMenu.hidden = true; viewBtn.setAttribute('aria-expanded', 'false'); } });
 
 /* Trascinamento: con il mouse parte appena muovi, con il dito dopo una breve pressione */
 let drag = null, justDragged = false;

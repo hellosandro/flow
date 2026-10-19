@@ -60,6 +60,12 @@ E, solo se aggiunti, questi **moduli**:
 
 **Niente allegati.** Non si caricano file: solo link esterni.
 
+#### Scheda in colonna
+Ogni bacheca ha due viste, scelte con l'icona a forma di occhio in alto a destra:
+
+- **Essenziale** (predefinita): la scheda mostra **solo il titolo**. Compare in più solo la scadenza quando è vicina (arancione) o passata (rosso). Niente etichette, icone, conteggi o membri.
+- **Completa**: etichette, scadenza, avanzamento della checklist, icone di descrizione, link e messaggi, iniziali dei membri.
+
 #### Dettaglio della scheda
 Aprendo una scheda si vede, dall'alto in basso:
 
