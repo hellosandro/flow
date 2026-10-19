@@ -347,9 +347,6 @@ body.grabbing, body.grabbing * { cursor: grabbing !important; }
 }
 .notes-x:focus { outline: none; }
 .notes-x::placeholder, .inline::placeholder { color: var(--label-3); }
-.mod-more { float: right; margin: -6px -8px -14px 12px; z-index: 2; }
-.mod-more .icon-btn { color: var(--label-2); }
-.mod-more .menu { top: 36px; }
 
 /* Descrizione formattata (stesso aspetto in lettura e in modifica) */
 .rich { font: var(--t-body); line-height: 1.55; overflow-wrap: anywhere; }
@@ -530,6 +527,16 @@ body.grabbing, body.grabbing * { cursor: grabbing !important; }
 .msg-head .when { font: var(--t-cap); color: var(--label-3); font-variant-numeric: tabular-nums; }
 .msg-body { margin-left: 36px; padding: 10px 13px; border-radius: 10px; background: var(--fill); }
 .msg.me .msg-body { background: color-mix(in srgb, var(--blue) 9%, var(--surface)); }
+.msg-actions { margin-left: 36px; display: flex; align-items: center; gap: 6px; font: var(--t-cap); color: var(--label-3); }
+.msg-actions button { font: inherit; color: var(--label-2); padding: 2px 0; }
+.msg-actions button:hover { color: var(--label); text-decoration: underline; }
+/* sul computer Modifica · Elimina compaiono passando sopra il messaggio; sul telefono restano visibili */
+@media (hover: hover) {
+  .msg-actions { opacity: 0; transition: opacity .15s; }
+  .msg:hover .msg-actions, .msg:focus-within .msg-actions { opacity: 1; }
+}
+.msg-edit { margin-left: 36px; }
+.msg-edit .rte-area { min-height: 90px; }
 .empty { font: var(--t-sub); color: var(--label-3); text-align: center; margin: 32px auto; max-width: 30ch; text-wrap: balance; }
 .composer { display: flex; flex-direction: column; gap: 6px; padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px)); border-top: .5px solid var(--sep); }
 .composer-row { display: flex; align-items: flex-end; gap: 8px; }
@@ -675,8 +682,8 @@ body.grabbing, body.grabbing * { cursor: grabbing !important; }
   .bar-actions { gap: 4px; }
   .bar-actions .bar-btn, [data-skin="carta"] .bar-actions .bar-btn { width: 44px; height: 44px; background: none; box-shadow: none; color: var(--label); }
   .bar-actions .bar-btn svg.i { width: 26px; height: 26px; stroke-width: 1.8; }
-  .mod-more .icon-btn, .tile-more .icon-btn, #view-btn { width: 40px; height: 40px; }
-  .mod-more .icon-btn svg.i, .tile-more .icon-btn svg.i, #view-btn svg.i { width: 24px; height: 24px; }
+  .tile-more .icon-btn, #view-btn { width: 40px; height: 40px; }
+  .tile-more .icon-btn svg.i, #view-btn svg.i { width: 24px; height: 24px; }
   .back svg.i { width: 22px; height: 22px; }
   .nav-item > svg.i { width: 22px; height: 22px; }
   .sheet-panel, .sidenav, .sheet-head { overflow-x: hidden; }
@@ -1065,12 +1072,6 @@ function confirmText(c, k) {
   if (k === 'labels') return n === 1 ? 'L’etichetta verrà tolta dalla scheda.' : `Le ${n} etichette verranno tolte dalla scheda.`;
   return n === 1 ? 'La persona verrà tolta dalla scheda.' : `Le ${n} persone verranno tolte dalla scheda.`;
 }
-/* "…" in alto a destra di ogni modulo, con Elimina */
-const rmModule = k => `<div class="more-wrap mod-more">
-  <button class="icon-btn" type="button" data-modmore aria-label="Altre azioni" aria-expanded="${ui.menu === 'mod'}">${ICON.more}</button>
-  ${ui.menu === 'mod' ? `<div class="menu right"><button type="button" class="danger" data-rmmodule="${k}">Elimina ${MODULES[k].toLowerCase()}</button></div>` : ''}
-</div>`;
-
 function panelHTML(c) {
   const col = colOf(c.col);
   switch (ui.tab) {
@@ -1079,8 +1080,15 @@ function panelHTML(c) {
         ? `<div class="msgs">${c.messages.map(m => {
             const pid = m.me ? 'p-io' : state.people.find(p => p.name === m.name)?.id;
             return `<article class="msg ${m.me ? 'me' : ''}">
-              <header class="msg-head">${pid ? avatars([pid]) : ''}<b class="who">${esc(m.me ? 'Io' : m.name)}</b><time class="when">${fmtTime(m.at)}</time></header>
-              <div class="msg-body rich">${m.html}</div>
+              <header class="msg-head">${pid ? avatars([pid]) : ''}<b class="who">${esc(m.me ? 'Io' : m.name)}</b><time class="when">${fmtTime(m.at)}${m.edited ? ' · modificato' : ''}</time></header>
+              ${ui.editMsg === m.id
+                ? `<div class="msg-edit"><div class="rte">
+                    <div class="rte-bar" role="toolbar" aria-label="Formattazione">${ui.linking === 'f-msgedit' ? linkInput() : rteBar({ headings: false })}</div>
+                    <div id="f-msgedit" class="rte-area rich" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Modifica messaggio">${ui.msgEditDraft}</div>
+                  </div>
+                  <div class="desc-actions"><button type="button" class="btn-fill" data-savemsg>Salva</button><button type="button" class="btn-plain" data-cancelmsg>Annulla</button></div></div>`
+                : `<div class="msg-body rich">${m.html}</div>
+                  ${m.me ? `<div class="msg-actions"><button type="button" data-editmsg="${m.id}">Modifica</button><span aria-hidden="true">·</span><button type="button" data-delmsg="${m.id}">Elimina</button></div>` : ''}`}
             </article>`;
           }).join('')}</div>`
         : `<p class="empty">Nessun messaggio. Quando FLOW sarà condiviso, qui scriverai con il cliente.</p>`;
@@ -1153,7 +1161,7 @@ function renderSheet(opts = {}) {
   const old = sheet.querySelector('.sheet-panel');
   const scroll = old && old.dataset.panel === ui.tab ? old.scrollTop : 0;
   sheet.className = 'sheet side';
-  const panelInner = `<div class="sheet-panel" data-panel="${ui.tab}" role="tabpanel">${MODULES[ui.tab] ? rmModule(ui.tab) : ''}${panelHTML(c)}</div>
+  const panelInner = `<div class="sheet-panel" data-panel="${ui.tab}" role="tabpanel">${panelHTML(c)}</div>
     ${ui.tab === 'msg' ? `<form class="composer" id="composer">
       ${ui.fmt ? `<div class="rte-bar mini" role="toolbar" aria-label="Formattazione">${ui.linking === 'f-msg' ? linkInput() : rteBar({ headings: false })}</div>` : ''}
       <div class="composer-row">
@@ -1170,6 +1178,7 @@ function renderSheet(opts = {}) {
             <p class="menu-head">Sposta in</p>
             ${state.columns.map(o => `<button type="button" class="mi" role="menuitemradio" aria-checked="${o.id === c.col}" data-moveto="${o.id}"><span class="mk">${o.id === c.col ? ICON.tick : ''}</span>${esc(o.title)}</button>`).join('')}
             <div class="menu-sep"></div>
+            ${MODULES[ui.tab] ? `<button type="button" class="mi danger" data-rmmodule="${ui.tab}"><span class="mk"></span>Elimina ${MODULES[ui.tab].toLowerCase()}</button>` : ''}
             <button type="button" class="mi danger" data-delete><span class="mk"></span>Elimina scheda</button>
           </div>` : ''}
         </div>
@@ -1186,8 +1195,8 @@ function renderSheet(opts = {}) {
       ${navHTML(c)}
     </div>
     ${ui.confirm ? `<div class="alert-wrap"><div class="alert" role="alertdialog" aria-modal="true" aria-labelledby="alert-t" aria-describedby="alert-d">
-      <h3 id="alert-t">Eliminare ${{ card: 'la scheda', checklist: 'la checklist', links: 'i link', due: 'la scadenza', labels: 'le etichette', members: 'i membri' }[ui.confirm]}?</h3>
-      <p id="alert-d">${ui.confirm === 'card' ? 'La scheda e tutto il suo contenuto (descrizione, messaggi e moduli) verranno cancellati definitivamente.' : confirmText(c, ui.confirm)}</p>
+      <h3 id="alert-t">Eliminare ${{ card: 'la scheda', msg: 'il messaggio', checklist: 'la checklist', links: 'i link', due: 'la scadenza', labels: 'le etichette', members: 'i membri' }[ui.confirm]}?</h3>
+      <p id="alert-d">${ui.confirm === 'card' ? 'La scheda e tutto il suo contenuto (descrizione, messaggi e moduli) verranno cancellati definitivamente.' : ui.confirm === 'msg' ? 'Il messaggio verrà cancellato definitivamente.' : confirmText(c, ui.confirm)}</p>
       <div class="alert-actions"><button type="button" class="strong" data-alertcancel>Annulla</button><button type="button" class="danger" data-alertok>Elimina</button></div>
     </div></div>` : ''}`;
   const panel = sheet.querySelector('.sheet-panel');
@@ -1201,7 +1210,7 @@ function openCard(cid) {
   state.open = cid;
   const c = cardOf(cid);
   c.messages ||= []; c.modules ||= []; c.members ||= [];
-  Object.assign(ui, { msgDraft: '', fmt: false, linking: false, navOpen: false, tab: 'desc', menu: null, confirm: null, addingItem: false, editDesc: false, draft: '' });
+  Object.assign(ui, { editMsg: null, msgEditDraft: '', delMsg: null, msgDraft: '', fmt: false, linking: false, navOpen: false, tab: 'desc', menu: null, confirm: null, addingItem: false, editDesc: false, draft: '' });
   sheetEl.innerHTML = `<div class="scrim" data-close></div><div class="sheet" role="dialog" aria-modal="true" aria-label="Scheda"></div>`;
   sheetEl.hidden = false;
   renderSheet();
@@ -1367,6 +1376,12 @@ function finishDrag() {
 }
 
 /* Eventi scheda aperta */
+function saveMsgEdit(c) {
+  const m = c.messages.find(x => x.id === ui.editMsg);
+  const html = cleanHTML(ui.msgEditDraft);
+  if (m && html && html !== m.html) { m.html = html; m.edited = true; }
+  ui.editMsg = null; ui.linking = false;
+}
 function deleteModule(c, k) {
   c.modules = c.modules.filter(x => x !== k);
   if (k === 'checklist') c.checklist = [];
@@ -1391,7 +1406,7 @@ function saveDesc(c) {
   ui.editDesc = false; ui.linking = false;
 }
 /* Due editor: la descrizione (f-notes) e il messaggio (f-msg); la barra lavora su quello usato per ultimo */
-const draftKey = id => id === 'f-msg' ? 'msgDraft' : 'draft';
+const draftKey = id => ({ 'f-msg': 'msgDraft', 'f-msgedit': 'msgEditDraft' })[id] || 'draft';
 let lastEd = 'f-notes';
 const curEd = () => $('#' + lastEd) || $('#f-notes') || $('#f-msg');
 sheetEl.addEventListener('focusin', e => { if (e.target.isContentEditable && e.target.id) lastEd = e.target.id; });
@@ -1539,10 +1554,20 @@ sheetEl.addEventListener('click', e => {
     if (k === 'links') focusEnd('#f-newlink');
     return;
   }
+  const em = t.closest('[data-editmsg]');
+  if (em) {
+    const m = c.messages.find(x => x.id === em.dataset.editmsg);
+    ui.editMsg = m.id; ui.msgEditDraft = m.html; ui.linking = false; renderSheet();
+    setTimeout(() => placeCaretEnd($('#f-msgedit')), 0);
+    return;
+  }
+  const dm = t.closest('[data-delmsg]');
+  if (dm) { ui.delMsg = dm.dataset.delmsg; ui.confirm = 'msg'; renderSheet(); return; }
+  if (t.closest('[data-savemsg]')) { saveMsgEdit(c); renderSheet(); return; }
+  if (t.closest('[data-cancelmsg]')) { ui.editMsg = null; ui.linking = false; renderSheet(); return; }
   if (t.closest('[data-navtoggle]')) { ui.navOpen = !ui.navOpen; renderSheet(); return; }
   /* su telefono, toccando il contenuto la barra aperta si richiude */
   if (ui.navOpen && t.closest('.content-col')) { ui.navOpen = false; renderSheet(); return; }
-  if (t.closest('[data-modmore]')) { ui.menu = ui.menu === 'mod' ? null : 'mod'; renderSheet(); return; }
   /* Elimina dal "…" del modulo: se c'è contenuto chiede conferma, se è vuoto toglie subito */
   const rmm = t.closest('[data-rmmodule]');
   if (rmm) {
@@ -1552,10 +1577,11 @@ sheetEl.addEventListener('click', e => {
     renderSheet(); return;
   }
   if (t.closest('[data-alertcancel]')) { ui.confirm = null; renderSheet(); return; }
+  if (t.closest('[data-alertok]') && ui.confirm === 'msg') { c.messages = c.messages.filter(m => m.id !== ui.delMsg); ui.confirm = null; ui.delMsg = null; renderSheet(); return; }
   if (t.closest('[data-alertok]') && ui.confirm === 'card') { ui.confirm = null; state.cards.splice(state.cards.indexOf(c), 1); return closeSheet(); }
   if (t.closest('[data-alertok]')) { deleteModule(c, ui.confirm); ui.confirm = null; renderSheet(); return; }
   const tab = t.closest('[data-tab]');
-  if (tab) { saveDesc(c); ui.navOpen = false; ui.tab = tab.dataset.tab; ui.addingItem = false; renderSheet({ bottom: true }); return; }
+  if (tab) { saveDesc(c); ui.editMsg = null; ui.navOpen = false; ui.tab = tab.dataset.tab; ui.addingItem = false; renderSheet({ bottom: true }); return; }
   if (t.closest('[data-additem]')) { ui.addingItem = true; renderSheet(); focusEnd('#f-newitem'); return; }
   const q = t.closest('[data-duequick]');
   if (q) { c.due = addDays(today, +q.dataset.duequick); renderSheet(); return; }
@@ -1583,7 +1609,7 @@ sheetEl.addEventListener('input', e => {
   const c = cardOf(state.open); if (!c) return;
   const t = e.target;
   if (t.id === 'f-title') c.title = t.value.replace(/\n/g, ' ') || 'Senza titolo';
-  if (t.id === 'f-notes' || t.id === 'f-msg') {
+  if (t.id === 'f-notes' || t.id === 'f-msg' || t.id === 'f-msgedit') {
     ui[draftKey(t.id)] = t.innerHTML;
     /* Scorciatoie come su Trello: "- " o "* " a inizio riga fa un elenco puntato, "1. " un elenco numerato */
     const sel = getSelection(), n = sel.anchorNode;
@@ -1615,6 +1641,7 @@ sheetEl.addEventListener('keydown', e => {
   if (t.id === 'f-notes' && e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); saveDesc(c); renderSheet(); return; }
   /* Nei messaggi Invio va a capo; si spedisce con il pulsante o con Cmd+Invio */
   if (t.id === 'f-msg' && e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); $('#composer').requestSubmit(); return; }
+  if (t.id === 'f-msgedit' && e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); saveMsgEdit(c); renderSheet(); return; }
   if (t.id === 'f-linkurl' && (e.key === 'Enter' || e.key === 'Escape')) {
     e.preventDefault();
     let url = e.key === 'Enter' ? t.value.trim() : '';
@@ -1626,6 +1653,7 @@ sheetEl.addEventListener('keydown', e => {
     if (ui.confirm) { ui.confirm = null; renderSheet(); return; }
     if (ui.menu) { ui.menu = null; renderSheet(); return; }
     if (ui.editDesc) { ui.editDesc = false; renderSheet(); return; }
+    if (ui.editMsg) { ui.editMsg = null; ui.linking = false; renderSheet(); return; }
     if (t.id === 'f-newitem' && c.checklist.length) { ui.addingItem = false; renderSheet(); return; }
     return closeSheet();
   }

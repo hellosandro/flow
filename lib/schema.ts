@@ -71,5 +71,6 @@ export const messages = pgTable('messages', {
   cardId: text('card_id').notNull().references(() => cards.id, { onDelete: 'cascade' }),
   autore: text('autore').notNull(),
   html: text('html').notNull(),
+  modificato: boolean('modificato').notNull().default(false),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
 }, t => [index('messages_card_idx').on(t.cardId)]);

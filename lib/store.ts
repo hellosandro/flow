@@ -9,7 +9,7 @@ export type UiCard = {
   labels: string[]; members: string[]; modules: string[];
   checklist: { id: string; text: string; done: boolean }[];
   links: { id: string; url: string; title: string }[];
-  messages: { id: string; me: boolean; name: string; html: string; at: number }[];
+  messages: { id: string; me: boolean; name: string; html: string; at: number; edited?: boolean }[];
   createdAt?: number;
 };
 export type UiBoard = {
@@ -60,7 +60,7 @@ export async function loadAll() {
       members: cmOf(c.id).map(x => x.membro),
       checklist: itemsOf(c.id).map(i => ({ id: i.id, text: i.testo, done: i.completato })),
       links: linksOf(c.id).map(l => ({ id: l.id, url: l.url, title: l.titolo })),
-      messages: msgsOf(c.id).map(m => ({ id: m.id, me: m.autore === ME, name: m.autore === ME ? 'Io' : m.autore, html: m.html, at: m.createdAt.getTime() }))
+      messages: msgsOf(c.id).map(m => ({ id: m.id, me: m.autore === ME, name: m.autore === ME ? 'Io' : m.autore, html: m.html, at: m.createdAt.getTime(), edited: m.modificato }))
     }))
   }));
 }
@@ -98,7 +98,7 @@ export async function saveBoard(id: string, input: UiBoard, posizione: number) {
     if (items.length) await tx.insert(t.checklistItems).values(items);
     const lks = cs.flatMap(c => arr<UiCard['links'][number]>(c.links).filter(l => l && l.id).map((l, n) => ({ id: l.id, cardId: c.id, url: str(l.url, 4000), titolo: str(l.title, 500), posizione: n })));
     if (lks.length) await tx.insert(t.links).values(lks);
-    const msgs = cs.flatMap(c => arr<UiCard['messages'][number]>(c.messages).filter(m => m && m.id).map(m => ({ id: m.id, cardId: c.id, autore: m.me ? ME : str(m.name, 200), html: str(m.html), createdAt: typeof m.at === 'number' ? new Date(m.at) : now })));
+    const msgs = cs.flatMap(c => arr<UiCard['messages'][number]>(c.messages).filter(m => m && m.id).map(m => ({ id: m.id, cardId: c.id, autore: m.me ? ME : str(m.name, 200), html: str(m.html), modificato: !!m.edited, createdAt: typeof m.at === 'number' ? new Date(m.at) : now })));
     if (msgs.length) await tx.insert(t.messages).values(msgs);
   });
 }
