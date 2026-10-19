@@ -75,7 +75,7 @@ Aprendo una scheda si vede, dall'alto in basso:
 
 1. il **titolo**;
 2. sotto, a sinistra il **contenuto della sezione scelta** e **a destra una barra laterale** con le sezioni in elenco (icona, nome e un riassunto a destra: numero di messaggi, avanzamento della checklist, data di scadenza, pallini delle etichette, iniziali dei membri): *Descrizione*, *Messaggi*, poi i moduli aggiunti; in fondo, dopo una linea, **+ Moduli**;
-3. su telefono la barra diventa un elenco come nelle Impostazioni di iPhone: si tocca una sezione e il contenuto occupa lo schermo, con "‹ Sezioni" per tornare indietro.
+3. su telefono la barra resta a destra ma chiusa, come **striscia di sole icone**; l'icona in cima la **apre** mostrando anche nomi e riassunti, e aprendosi **spinge il contenuto verso sinistra** (effetto push). Toccando una sezione o il contenuto si richiude. Non c'è una seconda schermata.
 
 Regole dei moduli:
 

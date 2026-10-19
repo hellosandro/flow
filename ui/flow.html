@@ -411,27 +411,32 @@ body.grabbing, body.grabbing * { cursor: grabbing !important; }
 .nav-item .nm .due-soon { color: var(--orange); }
 .nav-item .nm .due-late { color: var(--red); }
 .nav-item .nm .av { width: 18px; height: 18px; font-size: 8px; box-shadow: none; }
-.nav-item .chev-r { display: none; }
+/* pulsante per aprire e chiudere la barra: serve solo su telefono */
+.nav-toggle { display: none; }
 .nav-item.quiet, .nav-item.quiet > svg.i { color: var(--blue); }
 .nav-sep { height: .5px; background: var(--sep); margin: 8px 10px; }
 .nav-add { display: block; }
 .nav-add .menu { left: auto; right: 0; }
-.back-bar { display: none; }
 .variant { display: flex; background: var(--fill); border-radius: 8px; padding: 2px; }
 .variant button { font: var(--t-cap); padding: 4px 10px; border-radius: 6px; white-space: nowrap; color: var(--label-2); }
 .variant button[aria-pressed="true"] { background: var(--surface); color: var(--label); font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,.12); }
 @media (max-width: 720px) {
-  /* Su telefono la barra diventa un elenco: tocchi una voce e il contenuto entra da destra, come su iPhone */
-  .split { grid-template-columns: 1fr; }
-  .sidenav { border-left: 0; background: none; padding-left: var(--gutter-l); padding-right: var(--gutter-r); }
-  .nav-item { padding: 12px 10px; }
-  .nav-item .chev-r { display: inline-grid; color: var(--label-3); transform: rotate(-90deg); }
-  .nav-item[aria-selected="true"] { background: none; font-weight: 400; }
-  .nav-item[aria-selected="true"] > svg.i { color: var(--label-2); }
-  .split:not(.drilled) .content-col, .split.drilled .sidenav { display: none; }
-  .back-bar { display: flex; align-items: center; gap: 2px; padding: 10px var(--gutter-r) 0 var(--gutter-l); color: var(--blue); font: var(--t-body); }
-  .back-bar svg.i { width: 18px; height: 18px; stroke-width: 2; }
-  .back-bar span { margin-left: auto; color: var(--label-2); font: var(--t-sub); }
+  /* Su telefono la barra resta a destra: chiusa è una striscia di icone, aperta mostra anche i nomi
+     e spinge il contenuto verso sinistra (effetto push) */
+  .split { grid-template-columns: 1fr; position: relative; overflow: hidden; }
+  .content-col { margin-right: 56px; transition: transform .3s cubic-bezier(.2,.9,.3,1); }
+  .split.nav-open .content-col { transform: translateX(-176px); }
+  .sidenav {
+    position: absolute; top: 0; right: 0; bottom: 0; z-index: 2; width: 56px; padding: 8px 6px;
+    overflow-x: hidden; transition: width .3s cubic-bezier(.2,.9,.3,1), box-shadow .3s;
+  }
+  .split.nav-open .sidenav { width: 232px; box-shadow: -10px 0 30px rgba(0,0,0,.08); }
+  .nav-item { width: 220px; padding: 11px; gap: 12px; white-space: nowrap; }
+  .nav-item .nl, .nav-item .nm { transition: opacity .2s; }
+  .split:not(.nav-open) .nav-item .nl, .split:not(.nav-open) .nav-item .nm { opacity: 0; }
+  .nav-toggle { display: flex; color: var(--label); }
+  .nav-toggle > svg.i { color: var(--label); }
+  .nav-add .menu { right: auto; left: 0; }
 }
 
 /* Pagina iniziale */
@@ -762,6 +767,7 @@ const ICON = {
   tag: '<svg class="i" viewBox="0 0 16 16"><path d="M2.5 8.6V3.5a1 1 0 0 1 1-1h5.1l5 5a1 1 0 0 1 0 1.4l-4.7 4.7a1 1 0 0 1-1.4 0z"/><circle cx="5.6" cy="5.6" r=".9" fill="currentColor" stroke="none"/></svg>',
   up: '<svg class="i" viewBox="0 0 16 16"><path d="M8 13V3M4 7l4-4 4 4"/></svg>',
   msg: '<svg class="i" viewBox="0 0 16 16"><path d="M3 4.5A1.5 1.5 0 0 1 4.5 3h7A1.5 1.5 0 0 1 13 4.5v5a1.5 1.5 0 0 1-1.5 1.5H7.2L4.5 13v-2a1.5 1.5 0 0 1-1.5-1.5z"/></svg>',
+  side: '<svg class="i" viewBox="0 0 16 16"><rect x="2" y="2.75" width="12" height="10.5" rx="2"/><path d="M10 2.75v10.5"/></svg>',
   chevl: '<svg class="i" viewBox="0 0 16 16"><path d="M10 3 5 8l5 5"/></svg>',
   person: '<svg class="i" viewBox="0 0 16 16"><circle cx="8" cy="5.5" r="2.5"/><path d="M3 13.5c.6-2.4 2.6-3.8 5-3.8s4.4 1.4 5 3.8"/></svg>',
   more: '<svg class="i" viewBox="0 0 16 16"><circle cx="3.5" cy="8" r="1.2" fill="currentColor" stroke="none"/><circle cx="8" cy="8" r="1.2" fill="currentColor" stroke="none"/><circle cx="12.5" cy="8" r="1.2" fill="currentColor" stroke="none"/></svg>'
@@ -962,7 +968,7 @@ function updateSeg() {
 /* Scheda aperta: titolo, poi una riga di pillole. Descrizione e Messaggi ci sono sempre;
    Checklist, Link, Scadenza ed Etichette compaiono solo se li aggiungi. Sotto, il contenuto della pillola scelta. */
 const MODULES = { checklist: 'Checklist', links: 'Link', due: 'Scadenza', labels: 'Etichette', members: 'Membri' };
-const ui = { drill: false, tab: 'desc', menu: null, confirm: null, addingItem: false, editDesc: false, draft: '' };
+const ui = { navOpen: false, tab: 'desc', menu: null, confirm: null, addingItem: false, editDesc: false, draft: '' };
 
 const dayOf = ms => new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(ms));
 const fmtTime = ms => {
@@ -1021,7 +1027,7 @@ const MOD_ICON = { desc: ICON.note, msg: ICON.msg, checklist: ICON.check, links:
 function navHTML(c) {
   const col = colOf(c.col);
   const item = (k, label, meta = '') => `<button type="button" class="nav-item" role="tab" aria-selected="${ui.tab === k}" data-tab="${k}">
-    ${MOD_ICON[k]}<span class="nl">${label}</span>${meta ? `<span class="nm">${meta}</span>` : ''}<span class="chev-r">${ICON.chev}</span></button>`;
+    ${MOD_ICON[k]}<span class="nl">${label}</span>${meta ? `<span class="nm">${meta}</span>` : ''}</button>`;
   const out = [item('desc', 'Descrizione'), item('msg', 'Messaggi', c.messages.length || '')];
   for (const k of c.modules) {
     if (k === 'checklist') out.push(item(k, 'Checklist', c.checklist.length ? `${c.checklist.filter(i => i.done).length}/${c.checklist.length}` : ''));
@@ -1030,7 +1036,9 @@ function navHTML(c) {
     if (k === 'labels') { const labs = c.labels.map(labelOf).filter(Boolean); out.push(item(k, 'Etichette', labs.length ? `<span class="dots">${labs.map(l => `<i style="--c:${l.color}"></i>`).join('')}</span>` : '')); }
     if (k === 'members') out.push(item(k, 'Membri', c.members.length ? avatars(c.members) : ''));
   }
-  return `<nav class="sidenav" role="tablist" aria-label="Sezioni della scheda">${out.join('')}
+  return `<nav class="sidenav" role="tablist" aria-label="Sezioni della scheda">
+    <button type="button" class="nav-item nav-toggle" data-navtoggle aria-expanded="${!!ui.navOpen}" aria-label="${ui.navOpen ? 'Chiudi il menu' : 'Apri il menu'}">${ICON.side}<span class="nl">${ui.navOpen ? 'Chiudi' : 'Menu'}</span></button>
+    ${out.join('')}
     <div class="nav-sep"></div>
     <div class="add-wrap nav-add">
       <button type="button" class="nav-item quiet" data-addtoggle aria-haspopup="menu" aria-expanded="${ui.menu === 'add'}">${ICON.plus}<span class="nl">Moduli</span></button>
@@ -1154,7 +1162,6 @@ function renderSheet(opts = {}) {
         <button type="submit" class="send" aria-label="Invia" title="Invia (Cmd+Invio)">${ICON.up}</button>
       </div>
     </form>` : ''}`;
-  const tabName = { desc: 'Descrizione', msg: 'Messaggi', ...MODULES }[ui.tab];
   sheet.innerHTML = `<div class="sheet-bar"><span class="grabber"></span>
       <div class="bar-actions">
         <div class="more-wrap">
@@ -1172,9 +1179,8 @@ function renderSheet(opts = {}) {
     <div class="sheet-head">
       <textarea id="f-title" class="f-title" rows="1" aria-label="Titolo">${esc(c.title)}</textarea>
     </div>
-    <div class="split ${ui.drill ? 'drilled' : ''}">
+    <div class="split ${ui.navOpen ? 'nav-open' : ''}">
       <div class="content-col">
-        <button type="button" class="back-bar" data-back>${ICON.chevl}Sezioni<span>${tabName}</span></button>
         ${panelInner}
       </div>
       ${navHTML(c)}
@@ -1195,7 +1201,7 @@ function openCard(cid) {
   state.open = cid;
   const c = cardOf(cid);
   c.messages ||= []; c.modules ||= []; c.members ||= [];
-  Object.assign(ui, { msgDraft: '', fmt: false, linking: false, drill: false, tab: 'desc', menu: null, confirm: null, addingItem: false, editDesc: false, draft: '' });
+  Object.assign(ui, { msgDraft: '', fmt: false, linking: false, navOpen: false, tab: 'desc', menu: null, confirm: null, addingItem: false, editDesc: false, draft: '' });
   sheetEl.innerHTML = `<div class="scrim" data-close></div><div class="sheet" role="dialog" aria-modal="true" aria-label="Scheda"></div>`;
   sheetEl.hidden = false;
   renderSheet();
@@ -1512,12 +1518,16 @@ sheetEl.addEventListener('click', e => {
     }
     ui.menu = null; renderSheet(); return;
   }
-  if (t.closest('[data-addtoggle]')) { ui.menu = ui.menu === 'add' ? null : 'add'; renderSheet(); return; }
+  if (t.closest('[data-addtoggle]')) {
+    /* dalla barra chiusa del telefono, il menu dei moduli apre anche la barra */
+    if (matchMedia('(max-width: 720px)').matches) ui.navOpen = true;
+    ui.menu = ui.menu === 'add' ? null : 'add'; renderSheet(); return;
+  }
   /* Spunta tolta: il modulo si nasconde ma il contenuto resta. Spunta rimessa: torna com'era */
   const mod = t.closest('[data-module]');
   if (mod) {
     const k = mod.dataset.module;
-    ui.menu = null;
+    ui.menu = null; ui.navOpen = false;
     if (c.modules.includes(k)) {
       c.modules = c.modules.filter(x => x !== k);
       if (ui.tab === k) ui.tab = 'desc';
@@ -1529,7 +1539,9 @@ sheetEl.addEventListener('click', e => {
     if (k === 'links') focusEnd('#f-newlink');
     return;
   }
-  if (t.closest('[data-back]')) { ui.drill = false; renderSheet(); return; }
+  if (t.closest('[data-navtoggle]')) { ui.navOpen = !ui.navOpen; renderSheet(); return; }
+  /* su telefono, toccando il contenuto la barra aperta si richiude */
+  if (ui.navOpen && t.closest('.content-col')) { ui.navOpen = false; renderSheet(); return; }
   if (t.closest('[data-modmore]')) { ui.menu = ui.menu === 'mod' ? null : 'mod'; renderSheet(); return; }
   /* Elimina dal "…" del modulo: se c'è contenuto chiede conferma, se è vuoto toglie subito */
   const rmm = t.closest('[data-rmmodule]');
@@ -1543,7 +1555,7 @@ sheetEl.addEventListener('click', e => {
   if (t.closest('[data-alertok]') && ui.confirm === 'card') { ui.confirm = null; state.cards.splice(state.cards.indexOf(c), 1); return closeSheet(); }
   if (t.closest('[data-alertok]')) { deleteModule(c, ui.confirm); ui.confirm = null; renderSheet(); return; }
   const tab = t.closest('[data-tab]');
-  if (tab) { saveDesc(c); ui.drill = true; ui.tab = tab.dataset.tab; ui.addingItem = false; renderSheet({ bottom: true }); return; }
+  if (tab) { saveDesc(c); ui.navOpen = false; ui.tab = tab.dataset.tab; ui.addingItem = false; renderSheet({ bottom: true }); return; }
   if (t.closest('[data-additem]')) { ui.addingItem = true; renderSheet(); focusEnd('#f-newitem'); return; }
   const q = t.closest('[data-duequick]');
   if (q) { c.due = addDays(today, +q.dataset.duequick); renderSheet(); return; }
