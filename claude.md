@@ -25,8 +25,12 @@ FLOW è un tool online in stile Trello, personale e con meno funzioni. Serve a g
 
 ### 3.1 Bacheche
 - Più bacheche, una per progetto o cliente.
-- Ogni bacheca ha un titolo modificabile e una data di creazione.
-- Pagina iniziale: elenco delle bacheche.
+- Ogni bacheca ha un titolo modificabile (direttamente dal titolo grande in cima alla bacheca). La data di creazione è salvata ma non mostrata.
+- **Pagina iniziale "Bacheche"**: in alto la scritta FLOW e il titolo grande "Bacheche"; sotto, una griglia di riquadri bianchi, uno per bacheca (una colonna su telefono).
+  - Ogni riquadro mostra **solo il nome** e, se ci sono, i segnali urgenti: "1 scaduta" in rosso, "2 in scadenza" in arancione (stessa regola della vista essenziale).
+  - Toccando il riquadro si apre la bacheca; "‹ Bacheche" in alto a sinistra riporta qui.
+  - Il "…" sul riquadro (visibile passandoci sopra) contiene **Elimina bacheca**, con avviso di conferma.
+  - L'ultimo riquadro, tratteggiato, è **+ Nuova bacheca**: crea la bacheca con le tre colonne fisse e la apre subito, con il titolo pronto da scrivere.
 
 ### 3.2 Colonne
 Ogni bacheca nasce con tre colonne fisse:

@@ -386,6 +386,35 @@ body.grabbing, body.grabbing * { cursor: grabbing !important; }
   .back-bar span { margin-left: auto; color: var(--label-2); font: var(--t-sub); }
 }
 
+/* Pagina iniziale */
+.home { height: 100%; overflow-y: auto; }
+.brand { font: 700 12px/1 var(--font); letter-spacing: .16em; color: var(--label-2); }
+.home-title { font: var(--t-large); letter-spacing: -.022em; margin: 0; }
+.home-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px;
+  padding-left: var(--gutter-l); padding-right: var(--gutter-r); padding-block: 6px 40px;
+}
+.tile {
+  position: relative; display: flex; flex-direction: column; justify-content: space-between; gap: 14px;
+  min-height: 112px; padding: 16px 16px 14px; border-radius: 14px;
+  background: var(--surface); box-shadow: var(--card-shadow); text-align: left; cursor: pointer;
+  transition: box-shadow .15s;
+}
+.tile:hover { box-shadow: var(--lift-shadow); }
+.tile h2 { font: var(--t-title); font-size: 18px; margin: 0; padding-right: 30px; text-wrap: balance; overflow-wrap: anywhere; }
+.tile-meta { display: flex; flex-wrap: wrap; gap: 4px 12px; font: var(--t-cap); min-height: 16px; font-variant-numeric: tabular-nums; }
+.tile-more { position: absolute; top: 10px; right: 10px; }
+.tile-more .icon-btn { width: 28px; height: 28px; color: var(--label-2); opacity: 0; transition: opacity .15s; }
+.tile:hover .tile-more .icon-btn, .tile:focus-within .tile-more .icon-btn, .tile-more .icon-btn[aria-expanded="true"] { opacity: 1; }
+@media (hover: none) { .tile-more .icon-btn { opacity: 1; } }
+.tile-new {
+  flex-direction: row; align-items: center; justify-content: center; gap: 6px;
+  background: none; box-shadow: none; border: 1.5px dashed var(--fill-strong);
+  color: var(--label-2); font: var(--t-body);
+}
+.tile-new:hover { background: var(--fill); box-shadow: none; color: var(--label); }
+.alert-wrap.fixed { position: fixed; z-index: 40; }
+
 /* Avviso di conferma, nello stile degli avvisi di iPhone */
 .alert-wrap { position: absolute; inset: 0; z-index: 10; display: grid; place-items: center; padding: 24px; background: var(--scrim); animation: fade .15s ease; }
 .alert { width: min(280px, 100%); background: var(--surface); border-radius: 14px; box-shadow: var(--lift-shadow); text-align: center; overflow: hidden; }
@@ -528,7 +557,19 @@ body.grabbing, body.grabbing * { cursor: grabbing !important; }
 }
 </style>
 
-<div class="app">
+<div class="home" id="home" hidden>
+  <header class="top">
+    <div class="nav">
+      <span class="brand">FLOW</span>
+      <span class="proto">Prototipo · dati di esempio</span>
+    </div>
+    <h1 class="home-title">Bacheche</h1>
+  </header>
+  <main class="home-grid" id="home-grid"></main>
+  <div id="home-alert"></div>
+</div>
+
+<div class="app" id="app">
   <header class="top">
     <div class="nav">
       <button class="back" type="button"><svg class="i" viewBox="0 0 16 16"><path d="M10 3 5 8l5 5"/></svg>Bacheche</button>
@@ -587,7 +628,7 @@ const host = u => { try { return new URL(u).hostname.replace(/^www\./, ''); } ca
 const L = { logo: id(), stampa: id(), web: id(), admin: id(), urg: id() };
 const C = { io: id(), cli: id(), fatto: id(), sb: id(), perp: id() };
 const items = list => list.map(([text, done]) => ({ id: id(), text, done: !!done }));
-const state = {
+let state = {
   title: 'Cantina Valori',
   view: 'essential',
   created: addDays(today, -16),
@@ -657,6 +698,28 @@ const state = {
   ];
   for (const c of state.cards) for (const m of c.messages) m.html ||= `<p>${esc(m.text)}</p>`;
 }
+
+/* Ogni bacheca nasce con le tre colonne fisse e il set di etichette di base */
+function makeBoard(title, cards = []) {
+  const b = {
+    id: id(), title, view: 'essential', adding: null, open: null,
+    labels: [['Logo', 'blue'], ['Stampa', 'orange'], ['Web', 'teal'], ['Amministrazione', 'purple'], ['Urgente', 'red']].map(([name, c]) => ({ id: id(), name, color: `var(--${c})` })),
+    people: [{ id: 'p-io', name: 'Io', role: 'Proprietario', initials: 'IO', me: true }],
+    columns: [['In corso', 'in_corso'], ['In revisione', 'in_revisione'], ['Fatto', 'fatto']].map(([t, type]) => ({ id: id(), title: t, type }))
+  };
+  b.cards = cards.map(([col, t, due]) => ({
+    id: id(), col: b.columns[col].id, title: t, labels: [], due: due == null ? null : addDays(today, due),
+    notes: '', checklist: [], links: [], messages: [], members: [], modules: due == null ? [] : ['due']
+  }));
+  return b;
+}
+state.id = id();
+const boards = [
+  state,
+  makeBoard('Studio Ferri Architetti', [[0, 'Wireframe della home e dei progetti', 1], [0, 'Selezione foto dei cantieri'], [1, 'Proposta di logotipo', -2], [2, 'Brief e preventivo']]),
+  makeBoard('Libreria Àncora', [[0, 'Copertina del catalogo 2027', 9], [0, 'Segnalibri per Natale'], [1, 'Bozza della vetrina di dicembre']]),
+  makeBoard('Personale', [[0, 'Aggiornare il portfolio'], [0, 'Rinnovo del dominio', 5], [2, 'Biglietti da visita']])
+];
 
 const $ = s => document.querySelector(s);
 const personOf = pid => state.people.find(p => p.id === pid);
@@ -1411,5 +1474,75 @@ sheetEl.addEventListener('keydown', e => {
   }
 });
 
-renderBoard();
+/* Pagina iniziale: l'elenco delle bacheche */
+const homeEl = $('#home'), appEl = $('#app'), homeUi = { menu: null, confirm: null };
+function urgentOf(b) {
+  let late = 0, soon = 0;
+  for (const c of b.cards) {
+    const col = b.columns.find(x => x.id === c.col);
+    if (!c.due || !(c.modules || []).includes('due') || !col || col.type === 'fatto') continue;
+    const d = diffDays(c.due, today);
+    if (d < 0) late++; else if (d <= 3) soon++;
+  }
+  return { late, soon };
+}
+function renderHome() {
+  $('#home-grid').innerHTML = boards.map(b => {
+    const u = urgentOf(b);
+    return `<article class="tile" role="button" tabindex="0" data-openboard="${b.id}">
+      <h2>${esc(b.title)}</h2>
+      <div class="tile-meta">
+        ${u.late ? `<span class="due-late">${u.late === 1 ? '1 scaduta' : u.late + ' scadute'}</span>` : ''}
+        ${u.soon ? `<span class="due-soon">${u.soon} in scadenza</span>` : ''}
+      </div>
+      <div class="more-wrap tile-more">
+        <button class="icon-btn" type="button" data-tilemore="${b.id}" aria-label="Altre azioni" aria-expanded="${homeUi.menu === b.id}">${ICON.more}</button>
+        ${homeUi.menu === b.id ? `<div class="menu right" role="menu"><button type="button" class="mi danger" data-delboard="${b.id}">Elimina bacheca</button></div>` : ''}
+      </div>
+    </article>`;
+  }).join('') + `<button type="button" class="tile tile-new" data-newboard>${ICON.plus}Nuova bacheca</button>`;
+  const b = boards.find(x => x.id === homeUi.confirm);
+  $('#home-alert').innerHTML = b ? `<div class="alert-wrap fixed"><div class="alert" role="alertdialog" aria-modal="true" aria-labelledby="ha-t" aria-describedby="ha-d">
+      <h3 id="ha-t">Eliminare “${esc(b.title)}”?</h3>
+      <p id="ha-d">La bacheca, le sue colonne e tutte le schede verranno cancellate definitivamente.</p>
+      <div class="alert-actions"><button type="button" class="strong" data-homecancel>Annulla</button><button type="button" class="danger" data-homeok>Elimina</button></div>
+    </div></div>` : '';
+  if (b) $('[data-homecancel]').focus();
+}
+function showHome() {
+  state.open = null; renderSheet();
+  appEl.hidden = true; homeEl.hidden = false;
+  renderHome();
+}
+function openBoard(b) {
+  state = b; homeUi.menu = null;
+  homeEl.hidden = true; appEl.hidden = false;
+  boardEl.scrollLeft = 0;
+  renderBoard();
+}
+homeEl.addEventListener('click', e => {
+  const t = e.target;
+  if (homeUi.menu && !t.closest('.tile-more')) { homeUi.menu = null; renderHome(); }
+  const more = t.closest('[data-tilemore]');
+  if (more) { homeUi.menu = homeUi.menu === more.dataset.tilemore ? null : more.dataset.tilemore; renderHome(); return; }
+  const del = t.closest('[data-delboard]');
+  if (del) { homeUi.menu = null; homeUi.confirm = del.dataset.delboard; renderHome(); return; }
+  if (t.closest('[data-homecancel]')) { homeUi.confirm = null; renderHome(); return; }
+  if (t.closest('[data-homeok]')) { boards.splice(boards.findIndex(b => b.id === homeUi.confirm), 1); homeUi.confirm = null; renderHome(); return; }
+  if (t.closest('[data-newboard]')) {
+    const b = makeBoard('Nuova bacheca'); boards.push(b); openBoard(b);
+    const inp = $('#board-title'); inp.focus(); inp.select();
+    return;
+  }
+  const open = t.closest('[data-openboard]');
+  if (open && !t.closest('.tile-more')) openBoard(boards.find(b => b.id === open.dataset.openboard));
+});
+homeEl.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && (homeUi.confirm || homeUi.menu)) { homeUi.confirm = homeUi.menu = null; renderHome(); return; }
+  const tile = e.target.closest('[data-openboard]');
+  if (tile && e.target === tile && e.key === 'Enter') openBoard(boards.find(b => b.id === tile.dataset.openboard));
+});
+$('.back').addEventListener('click', showHome);
+
+showHome();
 </script>
