@@ -127,6 +127,7 @@ svg.i { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-widt
 .col-title { font: var(--t-head); margin: 0; flex: 1; min-width: 0; }
 .col-title input { font: inherit; border: 0; background: none; padding: 0; width: 100%; border-radius: 4px; }
 .col-title input:focus { outline: none; box-shadow: 0 0 0 2px var(--blue); }
+.col-title input:hover:not(:focus) { background: var(--fill); box-shadow: 0 0 0 3px var(--fill); }
 .col-kind { font: var(--t-cap); color: var(--label-3); }
 .count { font: var(--t-sub); color: var(--label-2); font-variant-numeric: tabular-nums; }
 
@@ -558,10 +559,9 @@ function renderBoard() {
   const keepScroll = boardEl.scrollLeft;
   boardEl.innerHTML = state.columns.map(col => {
     const cards = state.cards.filter(c => c.col === col.id);
-    const fixed = col.type !== 'variabile';
     return `<section class="col" data-col="${col.id}" data-type="${col.type}" id="col-${col.id}">
       <header class="col-head">
-        <h2 class="col-title">${fixed ? esc(col.title) : `<input value="${esc(col.title)}" data-rename="${col.id}" aria-label="Titolo colonna">`}</h2>
+        <h2 class="col-title"><input value="${esc(col.title)}" data-rename="${col.id}" aria-label="Titolo colonna" spellcheck="false"></h2>
       </header>
       <div class="list" data-list="${col.id}">${cards.map(c => cardHTML(c, col)).join('')}</div>
       ${state.adding === col.id

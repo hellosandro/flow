@@ -38,7 +38,7 @@ Ogni bacheca nasce con tre colonne fisse:
 A queste si aggiungono **una o più colonne variabili**:
 - titolo libero e modificabile (esempi: "Stand by", "Perpetue");
 - si possono aggiungere, rinominare, riordinare ed eliminare;
-- le tre colonne fisse non si eliminano. Resta da decidere se il loro titolo è modificabile.
+- le tre colonne fisse non si eliminano, ma il loro titolo è modificabile come quello delle altre.
 
 ### 3.3 Schede
 Ogni scheda contiene:
@@ -133,6 +133,6 @@ Quando FLOW sarà aperto ai clienti:
 ## 10. Da decidere
 
 - [ ] Altri dettagli della scheda
-- [ ] Titolo delle colonne fisse modificabile o no
+- [x] Titolo delle colonne fisse modificabile: sì
 - [ ] Set di etichette predefinito per le nuove bacheche
 - [ ] Archivio delle schede in "Fatto" dopo un certo tempo, o restano lì
