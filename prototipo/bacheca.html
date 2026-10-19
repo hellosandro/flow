@@ -358,7 +358,8 @@ body.grabbing, body.grabbing * { cursor: grabbing !important; }
 .nav-item:hover { background: var(--fill); }
 .nav-item[aria-selected="true"] { background: var(--fill-strong); font-weight: 600; }
 .nav-item[aria-selected="true"] > svg.i { color: var(--blue); }
-.nav-item .nl { flex: 1; min-width: 0; }
+.nav-item .nl { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nav-item .nm { flex: none; }
 .nav-item .nm { font: var(--t-cap); color: var(--label-3); font-variant-numeric: tabular-nums; }
 .nav-item .nm .due-soon { color: var(--orange); }
 .nav-item .nm .due-late { color: var(--red); }
@@ -733,7 +734,7 @@ function dueInfo(due, done) {
   if (!due) return null;
   const d = diffDays(due, today);
   if (done) return { cls: '', text: fmtShort(due) };
-  if (d < 0) return { cls: 'due-late', text: 'Scaduta · ' + fmtShort(due) };
+  if (d < 0) return { cls: 'due-late', text: fmtShort(due) };
   if (d === 0) return { cls: 'due-soon', text: 'Oggi' };
   if (d === 1) return { cls: 'due-soon', text: 'Domani' };
   if (d <= 3) return { cls: 'due-soon', text: fmtShort(due) };
