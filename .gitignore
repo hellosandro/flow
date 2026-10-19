@@ -1,0 +1,8 @@
+node_modules/
+.next/
+next-env.d.ts
+*.tsbuildinfo
+.env*
+.vercel/
+# generato da scripts/build-ui.mjs a partire da ui/flow.html
+lib/ui-html.ts

@@ -1,19 +1,3 @@
-<!doctype html>
-<html lang="it">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="FLOW">
-<meta name="robots" content="noindex">
-<style>
-:root { color-scheme: light; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); box-sizing: border-box; height: 100%; }
-body { margin: 0; font: 14px/1.4 -apple-system, BlinkMacSystemFont, system-ui, sans-serif; }
-img { max-width: 100%; }
-[hidden] { display: none !important; }
-</style>
-</head>
-<body>
 <title>FLOW · Bacheca</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <style>
@@ -404,6 +388,11 @@ body.grabbing, body.grabbing * { cursor: grabbing !important; }
 }
 
 /* Pagina iniziale */
+.logout { font: var(--t-sub); color: var(--blue); padding: 4px 2px; }
+.save-status {
+  position: fixed; left: 50%; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 50;
+  font: var(--t-sub); color: #fff; background: var(--red); padding: 8px 14px; border-radius: 99px; box-shadow: var(--lift-shadow); white-space: nowrap;
+}
 .home-empty { font: var(--t-body); color: var(--label-2); margin: 4px 0 0; }
 .home { height: 100%; overflow-y: auto; }
 .brand { font: 700 12px/1 var(--font); letter-spacing: .16em; color: var(--label-2); }
@@ -579,7 +568,7 @@ body.grabbing, body.grabbing * { cursor: grabbing !important; }
   <header class="top">
     <div class="nav">
       <span class="brand">FLOW</span>
-      <span class="proto">Versione di prova</span>
+      <button type="button" class="logout" id="logout">Esci</button>
     </div>
     <h1 class="home-title">Bacheche</h1>
     <p class="home-empty" id="home-empty" hidden>Nessuna bacheca. Creane una per il tuo primo progetto o cliente.</p>
@@ -593,7 +582,6 @@ body.grabbing, body.grabbing * { cursor: grabbing !important; }
     <div class="nav">
       <button class="back" type="button"><svg class="i" viewBox="0 0 16 16"><path d="M10 3 5 8l5 5"/></svg>Bacheche</button>
       <div class="nav-right">
-        <span class="proto">Versione di prova</span>
         <div class="view-wrap">
           <button class="icon-btn" type="button" id="view-btn" aria-label="Vista delle schede" aria-haspopup="menu" aria-expanded="false" title="Vista delle schede">
             <svg class="i" viewBox="0 0 16 16"><path d="M1.5 8s2.5-4.5 6.5-4.5S14.5 8 14.5 8 12 12.5 8 12.5 1.5 8 1.5 8z"/><circle cx="8" cy="8" r="2"/></svg>
@@ -613,6 +601,7 @@ body.grabbing, body.grabbing * { cursor: grabbing !important; }
 </div>
 
 <div class="sheet-wrap" id="sheet" hidden></div>
+<div class="save-status" id="save-status" role="status" hidden>Salvataggio non riuscito. Riprovo tra poco…</div>
 
 <script>
 const TZ = 'Europe/Rome';
@@ -658,18 +647,108 @@ function makeBoard(title, cards = []) {
   }));
   return b;
 }
-/* I dati restano salvati in questo browser, su questo dispositivo, finché non arriva il database (fase 2) */
+/* Salvataggio. Su Vercel i dati vanno nel database tramite le API; se le API non ci sono
+   (anteprima senza server) restano in questo browser. L'interfaccia si aggiorna subito e
+   salva in background; se il salvataggio non riesce lo segnala e riprova. */
 const STORE = 'flow-v1';
-let boards = [];
-try { boards = JSON.parse(localStorage.getItem(STORE))?.boards || []; } catch {}
-for (const b of boards) { b.open = null; b.adding = null; }
-let saveTimer = null;
+const PEOPLE = [{ id: 'p-io', name: 'Io', role: 'Proprietario', initials: 'IO', me: true }];
+let boards = [], mode = 'server', saving = false, saveTimer = null, retryDelay = 0;
+const dirty = new Set(), removed = new Set(), lastSaved = new Map();
+const serialize = ({ open, adding, people, ...rest }) => rest;
 function persist() {
-  clearTimeout(saveTimer);
-  saveTimer = setTimeout(() => { try { localStorage.setItem(STORE, JSON.stringify({ boards })); } catch {} }, 250);
+  /* si salva solo se la bacheca è davvero cambiata rispetto all'ultima versione salvata */
+  if (!state) return;
+  if (lastSaved.get(state.id) === JSON.stringify(serialize(state))) return;
+  dirty.add(state.id); scheduleSave();
+}
+function removeBoard(bid) { dirty.delete(bid); removed.add(bid); lastSaved.delete(bid); scheduleSave(0); }
+function scheduleSave(ms = 600) { clearTimeout(saveTimer); saveTimer = setTimeout(flush, ms); }
+async function flush({ keepalive = false } = {}) {
+  if (mode === 'local') {
+    try { localStorage.setItem(STORE, JSON.stringify({ boards: boards.map(serialize) })); } catch {}
+    dirty.clear(); removed.clear(); return;
+  }
+  if (saving) { scheduleSave(300); return; }
+  saving = true;
+  let failed = false;
+  const jobs = [...removed].map(bid => ['DELETE', bid]).concat([...dirty].map(bid => ['PUT', bid]));
+  removed.clear(); dirty.clear();
+  for (const [method, bid] of jobs) {
+    const b = boards.find(x => x.id === bid);
+    if (method === 'PUT' && !b) continue;
+    const body = method === 'PUT' ? JSON.stringify({ board: serialize(b), posizione: boards.indexOf(b) }) : undefined;
+    try {
+      const r = await fetch('/api/boards/' + encodeURIComponent(bid), {
+        method, body, headers: body ? { 'Content-Type': 'application/json' } : {},
+        keepalive: keepalive && (!body || body.length < 60000)
+      });
+      if (r.status === 401) { location.href = '/login'; return; }
+      if (!r.ok) throw new Error(r.status);
+      if (b && method === 'PUT') lastSaved.set(bid, JSON.stringify(serialize(b)));
+    } catch {
+      failed = true;
+      (method === 'PUT' ? dirty : removed).add(bid);
+    }
+  }
+  saving = false;
+  $('#save-status').hidden = !failed;
+  if (failed) { retryDelay = Math.min((retryDelay || 2000) * 2, 30000); scheduleSave(retryDelay); }
+  else retryDelay = 0;
 }
 document.addEventListener('input', persist);
-addEventListener('pagehide', () => { try { localStorage.setItem(STORE, JSON.stringify({ boards })); } catch {} });
+addEventListener('pagehide', () => { if (dirty.size || removed.size) flush({ keepalive: true }); });
+
+async function fetchBoards() {
+  const r = await fetch('/api/state', { cache: 'no-store' });
+  if (r.status === 401) { location.href = '/login'; return null; }
+  if (!(r.headers.get('content-type') || '').includes('json')) throw Object.assign(new Error('no-api'), { noApi: true });
+  const data = await r.json();
+  if (!r.ok) throw new Error(data.error || r.status);
+  return data.boards;
+}
+function adopt(list) {
+  boards = list || [];
+  lastSaved.clear();
+  for (const b of boards) {
+    b.open = null; b.adding = null; b.people = PEOPLE;
+    lastSaved.set(b.id, JSON.stringify(serialize(b)));
+  }
+}
+async function boot() {
+  $('#home-empty').textContent = 'Caricamento…'; $('#home-empty').hidden = false;
+  try {
+    const list = await fetchBoards();
+    if (!list) return;
+    adopt(list);
+  } catch (err) {
+    if (err.noApi || location.protocol === 'file:') {
+      /* nessun server: anteprima, i dati restano nel browser */
+      mode = 'local';
+      let saved = [];
+      try { saved = JSON.parse(localStorage.getItem(STORE))?.boards || []; } catch {}
+      adopt(saved);
+      $('#logout').hidden = true;
+    } else {
+      $('#home-empty').textContent = 'Non riesco a leggere i dati. Controlla la connessione e ricarica la pagina.';
+      return;
+    }
+  }
+  $('#home-empty').textContent = 'Nessuna bacheca. Creane una per il tuo primo progetto o cliente.';
+  showHome();
+}
+/* Tornando su FLOW (da un'altra app o da un altro dispositivo) si ricaricano i dati, se non si sta scrivendo */
+document.addEventListener('visibilitychange', async () => {
+  if (document.visibilityState !== 'visible' || mode !== 'server' || saving || dirty.size || removed.size) return;
+  if (state?.open || document.activeElement?.matches?.('input, textarea, [contenteditable]')) return;
+  try {
+    const list = await fetchBoards();
+    if (!list || dirty.size || state?.open) return;
+    const current = state?.id;
+    adopt(list);
+    if (!appEl.hidden) { const b = boards.find(x => x.id === current); if (b) { state = b; renderBoard(); } else showHome(); }
+    else renderHome();
+  } catch {}
+});
 
 const $ = s => document.querySelector(s);
 const personOf = pid => state.people.find(p => p.id === pid);
@@ -1344,7 +1423,7 @@ sheetEl.addEventListener('submit', e => {
   e.preventDefault();
   const c = cardOf(state.open), ed = $('#f-msg');
   const html = cleanHTML(ed?.innerHTML); if (!c || !html) return;
-  c.messages.push({ me: true, name: 'Io', html, at: Date.now() });
+  c.messages.push({ id: id(), me: true, name: 'Io', html, at: Date.now() });
   ui.msgDraft = ''; ui.linking = false;
   renderSheet({ bottom: true }); placeCaretEnd($('#f-msg'));
 });
@@ -1439,7 +1518,6 @@ function urgentOf(b) {
   return { late, soon };
 }
 function renderHome() {
-  persist();
   $('#home-empty').hidden = boards.length > 0;
   $('#home-grid').innerHTML = boards.map(b => {
     const u = urgentOf(b);
@@ -1482,9 +1560,9 @@ homeEl.addEventListener('click', e => {
   const del = t.closest('[data-delboard]');
   if (del) { homeUi.menu = null; homeUi.confirm = del.dataset.delboard; renderHome(); return; }
   if (t.closest('[data-homecancel]')) { homeUi.confirm = null; renderHome(); return; }
-  if (t.closest('[data-homeok]')) { boards.splice(boards.findIndex(b => b.id === homeUi.confirm), 1); homeUi.confirm = null; renderHome(); return; }
+  if (t.closest('[data-homeok]')) { boards.splice(boards.findIndex(b => b.id === homeUi.confirm), 1); removeBoard(homeUi.confirm); homeUi.confirm = null; renderHome(); return; }
   if (t.closest('[data-newboard]')) {
-    const b = makeBoard('Nuova bacheca'); boards.push(b); openBoard(b);
+    const b = makeBoard('Nuova bacheca'); b.people = PEOPLE; boards.push(b); openBoard(b);
     const inp = $('#board-title'); inp.focus(); inp.select();
     return;
   }
@@ -1498,8 +1576,10 @@ homeEl.addEventListener('keydown', e => {
 });
 $('.back').addEventListener('click', showHome);
 
-showHome();
+$('#logout').addEventListener('click', async () => {
+  if (dirty.size || removed.size) await flush();
+  await fetch('/api/logout', { method: 'POST' }).catch(() => {});
+  location.href = '/login';
+});
+boot();
 </script>
-
-</body>
-</html>
