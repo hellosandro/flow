@@ -1585,7 +1585,8 @@ sheetEl.addEventListener('click', e => {
   if (sub) { ui.menu = sub.dataset.submenu; renderSheet(); return; }
   if (t.closest('[data-delete]')) { ui.menu = null; ui.confirm = 'card'; renderSheet(); return; }
   const col = t.closest('[data-color]');
-  if (col) { c.color = +col.dataset.color; ui.menu = null; renderSheet(); renderBoard(); return; }
+  /* il sottomenu resta aperto: si possono provare più colori di seguito */
+  if (col) { c.color = +col.dataset.color; renderSheet(); renderBoard(); return; }
   const mv = t.closest('[data-moveto]');
   if (mv) {
     if (mv.dataset.moveto !== c.col) {
