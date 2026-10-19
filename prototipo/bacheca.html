@@ -288,6 +288,49 @@ body.grabbing, body.grabbing * { cursor: grabbing !important; }
 .mod-more .icon-btn { color: var(--label-2); }
 .mod-more .menu { top: 36px; }
 
+/* Descrizione formattata (stesso aspetto in lettura e in modifica) */
+.rich { font: var(--t-body); line-height: 1.55; overflow-wrap: anywhere; }
+.rich > :first-child { margin-top: 0; }
+.rich > :last-child { margin-bottom: 0; }
+.rich p, .rich div { margin: 0 0 8px; }
+.rich h2 { font: var(--t-title); letter-spacing: -.01em; margin: 18px 0 6px; }
+.rich h3 { font: var(--t-head); font-size: 17px; letter-spacing: -.01em; margin: 16px 0 6px; }
+.rich ul, .rich ol { margin: 0 0 8px; padding-left: 1.4em; }
+.rich li { margin: 2px 0; padding-left: 2px; }
+.rich li::marker { color: var(--label-2); }
+.rich a { color: var(--blue); text-decoration: none; }
+.rich a:hover { text-decoration: underline; }
+.rich s, .rich strike { color: var(--label-2); }
+.desc-view { white-space: normal; }
+.rte { border-radius: 10px; box-shadow: inset 0 0 0 1.5px var(--blue); background: var(--bg); }
+.rte-bar { display: flex; align-items: center; gap: 2px; padding: 4px 6px; border-bottom: .5px solid var(--sep); background: var(--surface); min-height: 42px; border-radius: 10px 10px 0 0; margin: 1.5px 1.5px 0; flex-wrap: wrap; }
+.rte-dd { position: relative; display: inline-flex; }
+.rte-btn.wide { width: auto; padding: 0 6px; gap: 2px; display: inline-flex; align-items: center; }
+.rte-btn .tt { font: 500 16px/1 var(--font); letter-spacing: -.02em; }
+.rte-btn b { font-weight: 700; font-size: 16px; }
+.rte-btn .dd-chev { width: 12px; height: 12px; stroke-width: 1.8; }
+.split-btn .rte-btn:first-child { border-radius: 6px 0 0 6px; }
+.rte-btn.chev-btn { width: 18px; border-radius: 0 6px 6px 0; }
+.rte-menu { top: calc(100% + 4px); left: 0; min-width: 190px; z-index: 6; }
+.rte-menu .mi { display: flex; align-items: center; gap: 10px; }
+.rte-menu .mi svg.i { width: 17px; height: 17px; color: var(--label-2); }
+.rte-menu .m-h2 { font: var(--t-title); font-size: 18px; }
+.rte-menu .m-h3 { font: var(--t-head); font-size: 16px; }
+.rte-btn { width: 32px; height: 30px; border-radius: 6px; display: grid; place-items: center; color: var(--label-2); font: 600 15px/1 var(--font); }
+.rte-btn:hover { background: var(--fill); color: var(--label); }
+.rte-btn[aria-pressed="true"] { background: var(--fill-strong); color: var(--label); }
+.rte-btn svg.i { width: 17px; height: 17px; }
+.rte-btn .it { font-style: italic; font-family: Georgia, "Times New Roman", serif; font-weight: 600; font-size: 17px; }
+.rte-sep { width: .5px; height: 18px; background: var(--sep); margin: 0 4px; }
+.rte-link { flex: 1; min-width: 0; border: 0; background: none; padding: 6px 8px; font: var(--t-body); }
+.rte-link:focus { outline: none; }
+.rte-area { min-height: 180px; padding: 12px 14px; border-radius: 0 0 10px 10px; }
+.rte-area:focus { outline: none; }
+.rte-area:empty::before { content: attr(data-placeholder); color: var(--label-3); }
+.desc-actions { align-items: center; flex-wrap: wrap; }
+.rte-tip { font: var(--t-cap); color: var(--label-3); margin-left: auto; }
+@media (max-width: 720px) { .rte-tip { display: none; } }
+
 /* Variante con barra laterale a destra */
 .sheet.side { width: min(780px, 100%); }
 .split { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 216px; border-top: .5px solid var(--sep); }
@@ -529,7 +572,7 @@ const state = {
   ],
   cards: [
     { col: C.io, title: 'Bozze etichetta Riserva 2023', labels: [L.stampa], due: addDays(today, 2),
-      notes: 'Tre direzioni: tipografica, illustrata, solo carta goffrata. Formato 90 × 120 mm.',
+      notes: '<p>Tre direzioni per l’etichetta, formato <b>90 × 120 mm</b>:</p><ul><li>tipografica</li><li>illustrata</li><li>solo carta goffrata, senza colore</li></ul><h3>Da ricordare</h3><p>Il cliente vuole vedere <i>almeno una</i> versione con l’oro a caldo.</p>',
       checklist: items([['Ricerca riferimenti', 1], ['Prima direzione', 1], ['Seconda direzione'], ['Terza direzione'], ['Impaginare presentazione']]),
       links: [{ id: id(), url: 'https://www.are.na/', title: 'Moodboard su Are.na' }] },
     { col: C.io, title: 'Palette colori linea bianchi', labels: [L.logo], due: addDays(today, -1), notes: '',
@@ -567,6 +610,7 @@ const state = {
   byTitle('Bozze etichetta Riserva 2023').members = ['p-io'];
   byTitle('Approvazione logo definitivo').members = ['p-io', 'p-marco'];
   byTitle('Testi retro etichetta per i 5 vini').members = ['p-marco', 'p-giulia'];
+  for (const c of state.cards) if (c.notes && !c.notes.startsWith('<')) c.notes = `<p>${esc(c.notes)}</p>`;
   for (const c of state.cards) c.modules = [c.checklist.length && 'checklist', c.links.length && 'links', c.due && 'due', c.labels.length && 'labels', c.members.length && 'members'].filter(Boolean);
   byTitle('Bozze etichetta Riserva 2023').messages = [
     { me: false, name: 'Marco Valori', text: 'Possiamo vedere anche una versione su carta goffrata?', at: Date.now() - 20 * H }
@@ -645,7 +689,7 @@ function updateSeg() {
 /* Scheda aperta: titolo, poi una riga di pillole. Descrizione e Messaggi ci sono sempre;
    Checklist, Link, Scadenza ed Etichette compaiono solo se li aggiungi. Sotto, il contenuto della pillola scelta. */
 const MODULES = { checklist: 'Checklist', links: 'Link', due: 'Scadenza', labels: 'Etichette', members: 'Membri' };
-const ui = { layout: 'side', drill: false, tab: 'desc', menu: null, confirm: null, addingItem: false, editDesc: false, draft: '' };
+const ui = { drill: false, tab: 'desc', menu: null, confirm: null, addingItem: false, editDesc: false, draft: '' };
 
 const dayOf = ms => new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(ms));
 const fmtTime = ms => {
@@ -654,23 +698,6 @@ const fmtTime = ms => {
   return day === today ? 'Oggi, ' + time : fmtShort(day) + ', ' + time;
 };
 
-function pillsHTML(c) {
-  const col = colOf(c.col);
-  const pill = (k, inner) => `<button type="button" role="tab" aria-selected="${ui.tab === k}" data-tab="${k}">${inner}</button>`;
-  const out = [pill('desc', 'Descrizione'), pill('msg', `Messaggi${c.messages.length ? `<span class="n">${c.messages.length}</span>` : ''}`)];
-  for (const k of c.modules) {
-    if (k === 'checklist') { const d = c.checklist.filter(i => i.done).length; out.push(pill(k, `Checklist${c.checklist.length ? `<span class="n">${d}/${c.checklist.length}</span>` : ''}`)); }
-    if (k === 'links') out.push(pill(k, `Link${c.links.length ? `<span class="n">${c.links.length}</span>` : ''}`));
-    if (k === 'due') { const due = dueInfo(c.due, col.type === 'fatto'); out.push(pill(k, due ? `<span class="${due.cls}">${ICON.cal}</span><span class="${due.cls}">${esc(due.text)}</span>` : `${ICON.cal}Scadenza`)); }
-    if (k === 'members') out.push(pill(k, `Membri${c.members.length ? avatars(c.members) : ''}`));
-    if (k === 'labels') { const labs = c.labels.map(labelOf).filter(Boolean); out.push(pill(k, `Etichette${labs.length ? `<span class="dots">${labs.map(l => `<i style="--c:${l.color}"></i>`).join('')}</span>` : ''}`)); }
-  }
-  out.push(`<span class="add-wrap">
-    <button type="button" class="ghost-pill plus-pill" data-addtoggle aria-label="Moduli della scheda" aria-haspopup="menu" aria-expanded="${ui.menu === 'add'}">${ICON.plus}</button>
-    ${addMenuHTML(c)}
-  </span>`);
-  return `<div class="pills" role="tablist">${out.join('')}</div>`;
-}
 function addMenuHTML(c) {
   if (ui.menu !== 'add') return '';
   return `<div class="menu" role="menu">${Object.keys(MODULES).map(k => {
@@ -681,6 +708,40 @@ function addMenuHTML(c) {
 }
 
 /* Variante con barra laterale a destra: le stesse voci delle pillole, in elenco con icona */
+/* Barra di formattazione come su Trello: Tt▾ · B · I▾ · elenchi▾ · link */
+const LIST_ICON = '<svg class="i" viewBox="0 0 16 16"><circle cx="3" cy="4.5" r=".9" fill="currentColor" stroke="none"/><circle cx="3" cy="8" r=".9" fill="currentColor" stroke="none"/><circle cx="3" cy="11.5" r=".9" fill="currentColor" stroke="none"/><path d="M6 4.5h7.5M6 8h7.5M6 11.5h7.5"/></svg>';
+const OL_ICON = '<svg class="i" viewBox="0 0 16 16"><path d="M6 4.5h7.5M6 8h7.5M6 11.5h7.5"/><text x="1.2" y="6" font-size="4.6" fill="currentColor" stroke="none" font-family="system-ui" font-weight="600">1</text><text x="1.2" y="13.2" font-size="4.6" fill="currentColor" stroke="none" font-family="system-ui" font-weight="600">2</text></svg>';
+const SMALL_CHEV = '<svg class="i dd-chev" viewBox="0 0 16 16"><path d="m4.5 6.5 3.5 3.5 3.5-3.5"/></svg>';
+const rteBar = () => `
+  <div class="rte-dd">
+    <button type="button" class="rte-btn wide" data-dd="tt" aria-label="Stile del testo" aria-haspopup="menu"><span class="tt">Tt</span>${SMALL_CHEV}</button>
+    <div class="menu rte-menu" data-ddmenu="tt" role="menu" hidden>
+      <button type="button" class="mi" data-block="p">Testo normale</button>
+      <button type="button" class="mi" data-block="h2"><span class="m-h2">Titolo</span></button>
+      <button type="button" class="mi" data-block="h3"><span class="m-h3">Sottotitolo</span></button>
+    </div>
+  </div>
+  <span class="rte-sep"></span>
+  <button type="button" class="rte-btn" data-cmd="bold" aria-label="Grassetto" title="Grassetto" aria-pressed="false"><b>B</b></button>
+  <div class="rte-dd split-btn">
+    <button type="button" class="rte-btn" data-cmd="italic" aria-label="Corsivo" title="Corsivo" aria-pressed="false"><span class="it">I</span></button>
+    <button type="button" class="rte-btn chev-btn" data-dd="more" aria-label="Altri stili" aria-haspopup="menu">${SMALL_CHEV}</button>
+    <div class="menu rte-menu" data-ddmenu="more" role="menu" hidden>
+      <button type="button" class="mi" data-cmd2="strikeThrough"><s>Barrato</s></button>
+      <button type="button" class="mi" data-cmd2="underline"><u>Sottolineato</u></button>
+      <button type="button" class="mi" data-cmd2="removeFormat">Togli formattazione</button>
+    </div>
+  </div>
+  <span class="rte-sep"></span>
+  <div class="rte-dd">
+    <button type="button" class="rte-btn wide" data-dd="list" aria-label="Elenchi" aria-haspopup="menu">${LIST_ICON}${SMALL_CHEV}</button>
+    <div class="menu rte-menu" data-ddmenu="list" role="menu" hidden>
+      <button type="button" class="mi" data-cmd2="insertUnorderedList">${LIST_ICON}Elenco puntato</button>
+      <button type="button" class="mi" data-cmd2="insertOrderedList">${OL_ICON}Elenco numerato</button>
+    </div>
+  </div>
+  <span class="rte-sep"></span>
+  <button type="button" class="rte-btn" data-cmd="link" aria-label="Link" title="Link" aria-pressed="false">${ICON.link}</button>`;
 const MOD_ICON = { desc: ICON.note, msg: ICON.msg, checklist: ICON.check, links: ICON.link, due: ICON.cal, labels: ICON.tag, members: ICON.person };
 function navHTML(c) {
   const col = colOf(c.col);
@@ -781,10 +842,17 @@ function panelHTML(c) {
 `;
     default:
       /* Descrizione: si legge come testo; tocchi il testo (o "Modifica") per scriverla, poi Salva */
-      if (ui.editDesc) return `<textarea id="f-notes" class="desc-edit" placeholder="Aggiungi una descrizione più dettagliata…">${esc(ui.draft)}</textarea>
-        <div class="desc-actions"><button type="button" class="btn-fill" data-savedesc>Salva</button><button type="button" class="btn-plain" data-canceldesc>Annulla</button></div>`;
+      if (ui.editDesc) return `<div class="rte">
+          <div class="rte-bar" role="toolbar" aria-label="Formattazione">
+            ${ui.linking
+              ? `<input id="f-linkurl" class="rte-link" type="url" placeholder="Incolla il link e premi Invio" enterkeyhint="done"><button type="button" class="rte-btn" data-linkcancel aria-label="Chiudi">${ICON.x}</button>`
+              : rteBar()}
+          </div>
+          <div id="f-notes" class="rte-area rich" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Descrizione" data-placeholder="Aggiungi una descrizione più dettagliata…">${ui.draft}</div>
+        </div>
+        <div class="desc-actions"><button type="button" class="btn-fill" data-savedesc>Salva</button><button type="button" class="btn-plain" data-canceldesc>Annulla</button><span class="rte-tip">Puoi scrivere anche - per un elenco, 1. per un elenco numerato</span></div>`;
       return c.notes
-        ? `<button type="button" class="desc-view" data-editdesc>${esc(c.notes)}</button><button type="button" class="desc-hint" data-editdesc>Modifica</button>`
+        ? `<div class="desc-view rich" role="button" tabindex="0" data-editdesc aria-label="Modifica la descrizione">${c.notes}</div><button type="button" class="desc-hint" data-editdesc>Modifica</button>`
         : `<button type="button" class="desc-empty" data-editdesc>Aggiungi una descrizione…</button>`;
   }
 }
@@ -796,8 +864,7 @@ function renderSheet(opts = {}) {
   const sheet = sheetEl.querySelector('.sheet');
   const old = sheet.querySelector('.sheet-panel');
   const scroll = old && old.dataset.panel === ui.tab ? old.scrollTop : 0;
-  const side = ui.layout === 'side';
-  sheet.className = 'sheet' + (side ? ' side' : '');
+  sheet.className = 'sheet side';
   const panelInner = `<div class="sheet-panel" data-panel="${ui.tab}" role="tabpanel">${MODULES[ui.tab] ? rmModule(ui.tab) : ''}${panelHTML(c)}</div>
     ${ui.tab === 'msg' ? `<form class="composer" id="composer">
       <input id="f-msg" placeholder="Scrivi un messaggio" autocomplete="off" enterkeyhint="send" aria-label="Messaggio">
@@ -809,23 +876,18 @@ function renderSheet(opts = {}) {
         <button class="icon-btn" type="button" data-more aria-label="Altre azioni" aria-expanded="${ui.menu === 'more'}">${ICON.more}</button>
         ${ui.menu === 'more' ? `<div class="menu"><button type="button" class="danger" data-delete>Elimina scheda</button></div>` : ''}
       </div>
-      <div class="variant" role="group" aria-label="Prova di impaginazione">
-        <button type="button" data-layout="pills" aria-pressed="${!side}">Pillole</button>
-        <button type="button" data-layout="side" aria-pressed="${side}">Barra laterale</button>
-      </div>
       <button class="btn-text strong" type="button" data-close>Fine</button>
     </div>
     <div class="sheet-head">
       <textarea id="f-title" class="f-title" rows="1" aria-label="Titolo">${esc(c.title)}</textarea>
-      ${side ? '' : pillsHTML(c)}
     </div>
-    ${side ? `<div class="split ${ui.drill ? 'drilled' : ''}">
+    <div class="split ${ui.drill ? 'drilled' : ''}">
       <div class="content-col">
         <button type="button" class="back-bar" data-back>${ICON.chevl}Sezioni<span>${tabName}</span></button>
         ${panelInner}
       </div>
       ${navHTML(c)}
-    </div>` : panelInner}
+    </div>
     ${ui.confirm ? `<div class="alert-wrap"><div class="alert" role="alertdialog" aria-modal="true" aria-labelledby="alert-t" aria-describedby="alert-d">
       <h3 id="alert-t">Eliminare ${{ checklist: 'la checklist', links: 'i link', due: 'la scadenza', labels: 'le etichette', members: 'i membri' }[ui.confirm]}?</h3>
       <p id="alert-d">${confirmText(c, ui.confirm)}</p>
@@ -999,13 +1061,114 @@ function deleteModule(c, k) {
   if (k === 'members') c.members = [];
   ui.tab = 'desc';
 }
-function saveDesc(c) { if (ui.editDesc) { c.notes = ui.draft.trim(); ui.editDesc = false; } }
+function saveDesc(c) {
+  if (!ui.editDesc) return;
+  const tmp = document.createElement('div'); tmp.innerHTML = ui.draft;
+  /* pulizia: niente paragrafi vuoti, niente elenchi chiusi dentro un paragrafo */
+  tmp.querySelectorAll('p > ul, p > ol').forEach(l => l.parentElement.replaceWith(...l.parentElement.childNodes));
+  tmp.querySelectorAll('p, h2, h3, li').forEach(el => { if (!el.textContent.trim()) el.remove(); });
+  c.notes = tmp.textContent.trim() ? tmp.innerHTML.trim() : '';
+  ui.editDesc = false; ui.linking = false;
+}
+function openEditor(c) {
+  ui.editDesc = true; ui.draft = c.notes; ui.linking = false; renderSheet();
+  try { document.execCommand('defaultParagraphSeparator', false, 'p'); } catch {}
+  /* il cursore va in fondo al testo, dopo che il clic è finito */
+  setTimeout(() => {
+    const ed = $('#f-notes'); if (!ed) return;
+    ed.focus();
+    let last = null;
+    const walk = document.createTreeWalker(ed, NodeFilter.SHOW_TEXT);
+    for (let n = walk.nextNode(); n; n = walk.nextNode()) if (n.textContent.trim()) last = n;
+    const r = document.createRange();
+    if (last) r.setStart(last, last.textContent.length); else { r.selectNodeContents(ed); r.collapse(false); }
+    r.collapse(true);
+    const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r);
+  }, 0);
+}
+/* Barra di formattazione: i pulsanti non tolgono il cursore dal testo */
+let savedRange = null;
+function syncToolbar() {
+  const ed = $('#f-notes'); if (!ed) return;
+  const sel = getSelection(); if (!sel.rangeCount || !ed.contains(sel.anchorNode)) return;
+  sheetEl.querySelectorAll('[data-cmd]').forEach(b => {
+    const cmd = b.dataset.cmd;
+    let on = false;
+    try {
+      if (cmd === 'link') on = !!sel.anchorNode.parentElement?.closest('a');
+      else on = document.queryCommandState(cmd);
+    } catch {}
+    b.setAttribute('aria-pressed', String(on));
+  });
+}
+document.addEventListener('selectionchange', syncToolbar);
+sheetEl.addEventListener('mousedown', e => { if (e.target.closest('[data-cmd], [data-cmd2], [data-block], [data-dd]')) e.preventDefault(); });
+const closeRteMenus = () => sheetEl.querySelectorAll('[data-ddmenu]').forEach(m => { m.hidden = true; });
+function runCmd(cmd, value = null) {
+  const ed = $('#f-notes'); ed.focus();
+  document.execCommand(cmd, false, value);
+  if (cmd === 'removeFormat') document.execCommand('formatBlock', false, 'p');
+  ui.draft = ed.innerHTML; closeRteMenus(); syncToolbar();
+}
+function applyLink(url) {
+  ui.linking = false;
+  const html = ui.draft;
+  renderSheet();
+  const ed = $('#f-notes'); ed.innerHTML = html; ed.focus();
+  if (savedRange && url) {
+    const sel = getSelection(); sel.removeAllRanges();
+    /* il contenuto è stato ridisegnato: si ricostruisce la selezione dalla posizione nel testo */
+    const r = restoreRange(ed, savedRange.text, savedRange.start, savedRange.end);
+    sel.addRange(r);
+    if (r.collapsed) document.execCommand('insertHTML', false, `<a href="${esc(url)}" target="_blank" rel="noopener">${esc(url)}</a>`);
+    else document.execCommand('createLink', false, url);
+    ed.querySelectorAll('a').forEach(a => { a.target = '_blank'; a.rel = 'noopener'; });
+  }
+  ui.draft = ed.innerHTML;
+}
+const textOffset = (root, node, off) => { const r = document.createRange(); r.selectNodeContents(root); r.setEnd(node, off); return r.toString().length; };
+function restoreRange(root, _t, start, end) {
+  const r = document.createRange(); r.selectNodeContents(root); r.collapse(false);
+  let pos = 0, sSet = false;
+  const walk = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  for (let n = walk.nextNode(); n; n = walk.nextNode()) {
+    const len = n.textContent.length;
+    if (!sSet && start <= pos + len) { r.setStart(n, start - pos); sSet = true; }
+    if (sSet && end <= pos + len) { r.setEnd(n, end - pos); break; }
+    pos += len;
+  }
+  return r;
+}
 sheetEl.addEventListener('click', e => {
   const c = cardOf(state.open); if (!c) return;
   const t = e.target;
   if (ui.menu && !t.closest('.more-wrap, .add-wrap')) { ui.menu = null; renderSheet(); }
   if (t.closest('[data-close]')) { saveDesc(c); return closeSheet(); }
-  if (t.closest('[data-editdesc]')) { ui.editDesc = true; ui.draft = c.notes; renderSheet(); focusEnd('#f-notes'); return; }
+  if (t.closest('.desc-view a')) return;
+  if (!t.closest('.rte-dd')) closeRteMenus();
+  const dd = t.closest('[data-dd]');
+  if (dd) {
+    const m = sheetEl.querySelector(`[data-ddmenu="${dd.dataset.dd}"]`), open = m.hidden;
+    closeRteMenus(); m.hidden = !open; return;
+  }
+  const blk = t.closest('[data-block]');
+  if (blk) { runCmd('formatBlock', blk.dataset.block); return; }
+  const c2 = t.closest('[data-cmd2]');
+  if (c2) { runCmd(c2.dataset.cmd2); return; }
+  if (t.closest('[data-editdesc]')) { openEditor(c); return; }
+  const cmd = t.closest('[data-cmd]');
+  if (cmd) {
+    if (cmd.dataset.cmd === 'link') {
+      const ed = $('#f-notes'), sel = getSelection();
+      if (sel.rangeCount && ed.contains(sel.anchorNode)) {
+        const r = sel.getRangeAt(0);
+        savedRange = { start: textOffset(ed, r.startContainer, r.startOffset), end: textOffset(ed, r.endContainer, r.endOffset) };
+      } else savedRange = { start: ed.textContent.length, end: ed.textContent.length };
+      ui.draft = ed.innerHTML; ui.linking = true; renderSheet(); $('#f-linkurl').focus();
+    } else runCmd(cmd.dataset.cmd);
+    return;
+  }
+  if (t.closest('[data-linkcancel]')) { applyLink(''); return; }
   if (t.closest('[data-savedesc]')) { saveDesc(c); renderSheet(); return; }
   if (t.closest('[data-canceldesc]')) { ui.editDesc = false; renderSheet(); return; }
   const mem = t.closest('[data-member]');
@@ -1029,8 +1192,6 @@ sheetEl.addEventListener('click', e => {
     if (k === 'links') focusEnd('#f-newlink');
     return;
   }
-  const lay = t.closest('[data-layout]');
-  if (lay) { ui.layout = lay.dataset.layout; ui.drill = false; renderSheet(); return; }
   if (t.closest('[data-back]')) { ui.drill = false; renderSheet(); return; }
   if (t.closest('[data-modmore]')) { ui.menu = ui.menu === 'mod' ? null : 'mod'; renderSheet(); return; }
   /* Elimina dal "…" del modulo: se c'è contenuto chiede conferma, se è vuoto toglie subito */
@@ -1064,11 +1225,28 @@ sheetEl.addEventListener('submit', e => {
   c.messages.push({ me: true, name: 'Io', text, at: Date.now() });
   renderSheet({ bottom: true }); $('#f-msg').focus();
 });
+sheetEl.addEventListener('paste', e => {
+  if (e.target.closest?.('#f-notes')) { e.preventDefault(); document.execCommand('insertText', false, e.clipboardData.getData('text/plain')); }
+});
 sheetEl.addEventListener('input', e => {
   const c = cardOf(state.open); if (!c) return;
   const t = e.target;
   if (t.id === 'f-title') c.title = t.value.replace(/\n/g, ' ') || 'Senza titolo';
-  if (t.id === 'f-notes') ui.draft = t.value;
+  if (t.id === 'f-notes') {
+    ui.draft = t.innerHTML;
+    /* Scorciatoie come su Trello: "- " o "* " a inizio riga fa un elenco puntato, "1. " un elenco numerato */
+    const sel = getSelection(), n = sel.anchorNode;
+    if (e.inputType === 'insertText' && e.data === ' ' && n?.nodeType === 3 && !n.parentElement.closest('li')) {
+      const m = n.textContent.match(/^([-*]|1\.)[\s\u00a0]/);
+      if (m && sel.anchorOffset === m[0].length) {
+        const r = document.createRange(); r.setStart(n, 0); r.setEnd(n, m[0].length);
+        sel.removeAllRanges(); sel.addRange(r);
+        document.execCommand('delete');
+        document.execCommand(m[1] === '1.' ? 'insertOrderedList' : 'insertUnorderedList');
+        ui.draft = t.innerHTML;
+      }
+    }
+  }
   if (t.dataset.itemtext) c.checklist.find(x => x.id === t.dataset.itemtext).text = t.value;
 });
 sheetEl.addEventListener('change', e => {
@@ -1084,6 +1262,13 @@ sheetEl.addEventListener('keydown', e => {
   const c = cardOf(state.open); if (!c) return;
   const t = e.target;
   if (t.id === 'f-notes' && e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); saveDesc(c); renderSheet(); return; }
+  if (t.id === 'f-linkurl' && (e.key === 'Enter' || e.key === 'Escape')) {
+    e.preventDefault();
+    let url = e.key === 'Enter' ? t.value.trim() : '';
+    if (url && !/^https?:\/\//i.test(url)) url = 'https://' + url;
+    applyLink(url); return;
+  }
+  if (t.closest?.('.desc-view') && e.key === 'Enter') { e.preventDefault(); openEditor(c); return; }
   if (e.key === 'Escape') {
     if (ui.confirm) { ui.confirm = null; renderSheet(); return; }
     if (ui.menu) { ui.menu = null; renderSheet(); return; }

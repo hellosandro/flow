@@ -44,7 +44,7 @@ A queste si aggiungono **una o più colonne variabili**:
 Ogni scheda contiene sempre:
 
 - **Titolo** (obbligatorio)
-- **Descrizione**: testo libero
+- **Descrizione**: testo con formattazione semplice, come su Trello: titolo e sottotitolo, grassetto, corsivo, barrato, sottolineato, elenchi puntati e numerati, link. Niente immagini né file.
 - **Messaggi**: conversazione sulla scheda. Nella beta serve come diario; con la condivisione (sezione 9) diventa la chat con il cliente.
 
 E, solo se aggiunti, questi **moduli**:
@@ -61,16 +61,16 @@ E, solo se aggiunti, questi **moduli**:
 Aprendo una scheda si vede, dall'alto in basso:
 
 1. il **titolo**;
-2. una riga di **pillole** allo stesso livello: *Descrizione*, *Messaggi*, poi i moduli aggiunti, e per ultimo un pulsante **+**. Le pillole vanno a capo, non scorrono;
-3. sotto, il **contenuto della sola pillola scelta**.
+2. sotto, a sinistra il **contenuto della sezione scelta** e **a destra una barra laterale** con le sezioni in elenco (icona, nome e un riassunto a destra: numero di messaggi, avanzamento della checklist, data di scadenza, pallini delle etichette, iniziali dei membri): *Descrizione*, *Messaggi*, poi i moduli aggiunti; in fondo, dopo una linea, **+ Moduli**;
+3. su telefono la barra diventa un elenco come nelle Impostazioni di iPhone: si tocca una sezione e il contenuto occupa lo schermo, con "‹ Sezioni" per tornare indietro.
 
 Regole dei moduli:
 
-- Il **+** apre un menu a tendina con tutti i moduli e una spunta accanto a quelli visibili.
+- **+ Moduli** apre un menu a tendina con tutti i moduli e una spunta accanto a quelli visibili.
 - **Spuntare** un modulo lo mostra. **Togliere la spunta lo nasconde ma non ne cancella il contenuto**: rimettendo la spunta torna com'era. Nel menu, accanto a un modulo nascosto con contenuto, compare un'indicazione grigia (es. "5 elementi").
 - Un modulo nascosto non compare da nessuna parte, nemmeno sulla scheda in colonna: una scadenza nascosta non dà avvisi.
 - **Eliminare** un modulo si fa solo dal suo contenuto, dal menu "…" in alto a destra. Se il modulo ha contenuto, un avviso chiede conferma dicendo cosa si perde (es. "I 5 elementi verranno cancellati definitivamente"), con **Annulla** come scelta predefinita.
-- La descrizione si legge come testo; toccandola si apre la modifica, con **Salva** e **Annulla**.
+- La descrizione si legge già formattata; toccandola si apre la modifica, con una barra di formattazione (Tt▾ per i titoli, grassetto, corsivo▾ per gli altri stili, elenchi▾, link) e i pulsanti **Salva** e **Annulla**. Scrivere "- " o "1. " a inizio riga crea un elenco. Il testo incollato entra senza formattazione.
 - La checklist è nello stile di Trello: barra di avanzamento con percentuale, quadratini da spuntare, elementi fatti barrati.
 - "Elimina scheda" sta nel menu "…" in alto a sinistra.
 
