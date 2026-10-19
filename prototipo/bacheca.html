@@ -194,7 +194,15 @@ body.grabbing, body.grabbing * { cursor: grabbing !important; }
   display: flex; flex-direction: column; overflow: hidden;
   animation: rise .28s cubic-bezier(.2,.9,.3,1);
 }
-.sheet-bar { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px 6px; }
+.sheet-bar { display: flex; align-items: center; justify-content: flex-end; padding: 12px 16px 6px; }
+.bar-actions { display: flex; align-items: center; gap: 6px; }
+.bar-actions .bar-btn { width: 30px; height: 30px; background: var(--fill); color: var(--label-2); }
+.bar-actions .bar-btn:hover, .bar-actions .bar-btn[aria-expanded="true"] { background: var(--fill-strong); color: var(--label); }
+.bar-actions .bar-btn svg.i { width: 16px; height: 16px; stroke-width: 2; }
+.card-menu { min-width: 210px; }
+.menu .menu-head { font: var(--t-cap); color: var(--label-2); padding: 8px 12px 4px; margin: 0; }
+.menu .mi { display: flex; align-items: center; gap: 8px; }
+.menu-sep { height: .5px; background: var(--sep); margin: 4px 8px; }
 .grabber { display: none; }
 .btn-text { color: var(--blue); font: var(--t-body); padding: 4px 2px; }
 .btn-text.strong { font-weight: 600; }
@@ -917,11 +925,18 @@ function renderSheet(opts = {}) {
     </form>` : ''}`;
   const tabName = { desc: 'Descrizione', msg: 'Messaggi', ...MODULES }[ui.tab];
   sheet.innerHTML = `<div class="sheet-bar"><span class="grabber"></span>
-      <div class="more-wrap">
-        <button class="icon-btn" type="button" data-more aria-label="Altre azioni" aria-expanded="${ui.menu === 'more'}">${ICON.more}</button>
-        ${ui.menu === 'more' ? `<div class="menu"><button type="button" class="danger" data-delete>Elimina scheda</button></div>` : ''}
+      <div class="bar-actions">
+        <div class="more-wrap">
+          <button class="icon-btn bar-btn" type="button" data-more aria-label="Altre azioni" aria-haspopup="menu" aria-expanded="${ui.menu === 'more'}">${ICON.more}</button>
+          ${ui.menu === 'more' ? `<div class="menu right card-menu" role="menu">
+            <p class="menu-head">Sposta in</p>
+            ${state.columns.map(o => `<button type="button" class="mi" role="menuitemradio" aria-checked="${o.id === c.col}" data-moveto="${o.id}"><span class="mk">${o.id === c.col ? ICON.tick : ''}</span>${esc(o.title)}</button>`).join('')}
+            <div class="menu-sep"></div>
+            <button type="button" class="mi danger" data-delete><span class="mk"></span>Elimina scheda</button>
+          </div>` : ''}
+        </div>
+        <button class="icon-btn bar-btn close-btn" type="button" data-close aria-label="Chiudi" title="Chiudi">${ICON.x}</button>
       </div>
-      <button class="btn-text strong" type="button" data-close>Fine</button>
     </div>
     <div class="sheet-head">
       <textarea id="f-title" class="f-title" rows="1" aria-label="Titolo">${esc(c.title)}</textarea>
@@ -934,8 +949,8 @@ function renderSheet(opts = {}) {
       ${navHTML(c)}
     </div>
     ${ui.confirm ? `<div class="alert-wrap"><div class="alert" role="alertdialog" aria-modal="true" aria-labelledby="alert-t" aria-describedby="alert-d">
-      <h3 id="alert-t">Eliminare ${{ checklist: 'la checklist', links: 'i link', due: 'la scadenza', labels: 'le etichette', members: 'i membri' }[ui.confirm]}?</h3>
-      <p id="alert-d">${confirmText(c, ui.confirm)}</p>
+      <h3 id="alert-t">Eliminare ${{ card: 'la scheda', checklist: 'la checklist', links: 'i link', due: 'la scadenza', labels: 'le etichette', members: 'i membri' }[ui.confirm]}?</h3>
+      <p id="alert-d">${ui.confirm === 'card' ? 'La scheda e tutto il suo contenuto (descrizione, messaggi e moduli) verranno cancellati definitivamente.' : confirmText(c, ui.confirm)}</p>
       <div class="alert-actions"><button type="button" class="strong" data-alertcancel>Annulla</button><button type="button" class="danger" data-alertok>Elimina</button></div>
     </div></div>` : ''}`;
   const panel = sheet.querySelector('.sheet-panel');
@@ -953,7 +968,7 @@ function openCard(cid) {
   sheetEl.innerHTML = `<div class="scrim" data-close></div><div class="sheet" role="dialog" aria-modal="true" aria-label="Scheda"></div>`;
   sheetEl.hidden = false;
   renderSheet();
-  setTimeout(() => $('#sheet .btn-text[data-close]')?.focus(), 0);
+  setTimeout(() => $('#sheet .close-btn')?.focus(), 0);
 }
 const focusEnd = sel => { const el = $(sel); if (el) { el.focus(); const n = el.value.length; try { el.setSelectionRange(n, n); } catch {} } };
 function closeSheet() { const was = state.open; state.open = null; renderSheet(); renderBoard(); document.querySelector(`[data-card="${was}"]`)?.focus(); }
@@ -1254,7 +1269,18 @@ sheetEl.addEventListener('click', e => {
   const mem = t.closest('[data-member]');
   if (mem) { const m = mem.dataset.member; c.members = c.members.includes(m) ? c.members.filter(x => x !== m) : [...c.members, m]; renderSheet(); return; }
   if (t.closest('[data-more]')) { ui.menu = ui.menu === 'more' ? null : 'more'; renderSheet(); return; }
-  if (t.closest('[data-delete]')) { state.cards.splice(state.cards.indexOf(c), 1); return closeSheet(); }
+  if (t.closest('[data-delete]')) { ui.menu = null; ui.confirm = 'card'; renderSheet(); return; }
+  const mv = t.closest('[data-moveto]');
+  if (mv) {
+    if (mv.dataset.moveto !== c.col) {
+      state.cards.splice(state.cards.indexOf(c), 1);
+      c.col = mv.dataset.moveto;
+      const last = state.cards.map(x => x.col).lastIndexOf(c.col);
+      state.cards.splice(last + 1, 0, c);
+      renderBoard();
+    }
+    ui.menu = null; renderSheet(); return;
+  }
   if (t.closest('[data-addtoggle]')) { ui.menu = ui.menu === 'add' ? null : 'add'; renderSheet(); return; }
   /* Spunta tolta: il modulo si nasconde ma il contenuto resta. Spunta rimessa: torna com'era */
   const mod = t.closest('[data-module]');
@@ -1283,6 +1309,7 @@ sheetEl.addEventListener('click', e => {
     renderSheet(); return;
   }
   if (t.closest('[data-alertcancel]')) { ui.confirm = null; renderSheet(); return; }
+  if (t.closest('[data-alertok]') && ui.confirm === 'card') { ui.confirm = null; state.cards.splice(state.cards.indexOf(c), 1); return closeSheet(); }
   if (t.closest('[data-alertok]')) { deleteModule(c, ui.confirm); ui.confirm = null; renderSheet(); return; }
   const tab = t.closest('[data-tab]');
   if (tab) { saveDesc(c); ui.drill = true; ui.tab = tab.dataset.tab; ui.addingItem = false; renderSheet({ bottom: true }); return; }

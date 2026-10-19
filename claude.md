@@ -81,11 +81,11 @@ Regole dei moduli:
 - **Eliminare** un modulo si fa solo dal suo contenuto, dal menu "…" in alto a destra. Se il modulo ha contenuto, un avviso chiede conferma dicendo cosa si perde (es. "I 5 elementi verranno cancellati definitivamente"), con **Annulla** come scelta predefinita.
 - La descrizione si legge già formattata; toccandola si apre la modifica, con una barra di formattazione (Tt▾ per i titoli, grassetto, corsivo▾ per gli altri stili, elenchi▾, link) e i pulsanti **Salva** e **Annulla**. Scrivere "- " o "1. " a inizio riga crea un elenco. Il testo incollato entra senza formattazione.
 - La checklist è nello stile di Trello: barra di avanzamento con percentuale, quadratini da spuntare, elementi fatti barrati.
-- "Elimina scheda" sta nel menu "…" in alto a sinistra.
+- In alto a destra ci sono due icone: **"…"** apre un menu con **Sposta in** (elenco delle colonne, con la spunta su quella attuale) ed **Elimina scheda** (in rosso, con avviso di conferma); **✕** chiude la scheda.
 
 Azioni sulle schede:
 - creare, modificare, eliminare;
-- trascinare tra colonne e riordinare dentro la colonna, anche su telefono (tenendo premuta la scheda). Non c'è un comando separato per cambiare colonna.
+- trascinare tra colonne e riordinare dentro la colonna, anche su telefono (tenendo premuta la scheda); in alternativa, "Sposta in" dal menu "…" della scheda aperta.
 
 ## 4. Design
 
