@@ -31,8 +31,8 @@ FLOW è un tool online in stile Trello, personale e con meno funzioni. Serve a g
 ### 3.2 Colonne
 Ogni bacheca nasce con tre colonne fisse:
 
-1. **Io**: cose che devo fare io.
-2. **Cliente**: cose che aspetto dal cliente.
+1. **In corso**: lavoro in corso.
+2. **In revisione**: lavoro consegnato, in attesa della revisione del cliente.
 3. **Fatto**: cose concluse.
 
 A queste si aggiungono **una o più colonne variabili**:
@@ -123,7 +123,7 @@ Azioni sulle schede:
 
 ```
 boards          id, titolo, posizione, created_at
-columns         id, board_id, titolo, tipo ('io' | 'cliente' | 'fatto' | 'variabile'), posizione
+columns         id, board_id, titolo, tipo ('in_corso' | 'in_revisione' | 'fatto' | 'variabile'), posizione
 labels          id, board_id, nome, colore
 cards           id, column_id, board_id, titolo, descrizione, scadenza (date), moduli_visibili (elenco), posizione, created_at, updated_at
 card_labels     card_id, label_id
