@@ -268,7 +268,12 @@ body.grabbing, body.grabbing * { cursor: grabbing !important; }
 .pills button[aria-selected="true"] .due-soon, .pills button[aria-selected="true"] .due-late { color: inherit; }
 .pills .ghost-pill { background: none; color: var(--blue); box-shadow: inset 0 0 0 1px var(--sep); }
 .pills .ghost-pill:hover { background: var(--fill); }
-.pills .ghost-pill.quiet { color: var(--label-2); padding-inline: 9px; }
+.pills .plus-pill { width: 32px; justify-content: center; padding-inline: 0; }
+.pills .plus-pill svg.i { width: 15px; height: 15px; stroke-width: 2; }
+.pills .menu .mi { gap: 8px; }
+.menu .mk { width: 16px; display: grid; place-items: center; color: var(--blue); }
+.menu .mk svg.i { width: 14px; height: 14px; stroke-width: 2.2; color: var(--blue); }
+.menu .mi small { margin-left: auto; padding-left: 16px; font: var(--t-cap); color: var(--label-3); }
 .dots { display: inline-flex; gap: 3px; }
 .dots i { width: 8px; height: 8px; border-radius: 50%; background: var(--c); }
 
@@ -279,8 +284,21 @@ body.grabbing, body.grabbing * { cursor: grabbing !important; }
 }
 .notes-x:focus { outline: none; }
 .notes-x::placeholder, .inline::placeholder { color: var(--label-3); }
-.rm-module { display: block; margin-top: 22px; font: var(--t-sub); color: var(--label-3); }
-.rm-module:hover { color: var(--red); }
+.mod-more { float: right; margin: -6px -8px -14px 12px; z-index: 2; }
+.mod-more .icon-btn { color: var(--label-2); }
+.mod-more .menu { top: 36px; }
+
+/* Avviso di conferma, nello stile degli avvisi di iPhone */
+.alert-wrap { position: absolute; inset: 0; z-index: 10; display: grid; place-items: center; padding: 24px; background: var(--scrim); animation: fade .15s ease; }
+.alert { width: min(280px, 100%); background: var(--surface); border-radius: 14px; box-shadow: var(--lift-shadow); text-align: center; overflow: hidden; }
+.alert h3 { font: var(--t-head); margin: 18px 16px 4px; text-wrap: balance; }
+.alert p { font: var(--t-sub); color: var(--label-2); margin: 0 16px 16px; text-wrap: balance; }
+.alert-actions { display: grid; grid-template-columns: 1fr 1fr; border-top: .5px solid var(--sep); }
+.alert-actions button { padding: 11px 8px; font: var(--t-body); color: var(--blue); }
+.alert-actions button + button { border-left: .5px solid var(--sep); }
+.alert-actions button:hover { background: var(--fill); }
+.alert-actions .strong { font-weight: 600; }
+.alert-actions .danger { color: var(--red); }
 
 /* Checklist come su Trello: barra di avanzamento, quadratini, nessun riquadro */
 .cl-progress { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
@@ -535,16 +553,18 @@ function dueInfo(due, done) {
 }
 
 function cardHTML(c, col) {
-  const labs = c.labels.map(labelOf).filter(Boolean);
-  const due = dueInfo(c.due, col.type === 'fatto');
-  const total = c.checklist.length, done = c.checklist.filter(i => i.done).length;
+  /* Un modulo nascosto (spunta tolta) non compare da nessuna parte, nemmeno la sua scadenza */
+  const on = k => !c.modules || c.modules.includes(k);
+  const labs = on('labels') ? c.labels.map(labelOf).filter(Boolean) : [];
+  const due = on('due') ? dueInfo(c.due, col.type === 'fatto') : null;
+  const total = on('checklist') ? c.checklist.length : 0, done = c.checklist.filter(i => i.done).length;
   const meta = [];
   if (due) meta.push(`<span class="${due.cls}">${ICON.cal}${esc(due.text)}</span>`);
   if (total) meta.push(`<span class="${done === total ? 'check-done' : ''}">${ICON.check}${done}/${total}</span>`);
   if (c.notes) meta.push(`<span aria-label="Ha delle note">${ICON.note}</span>`);
-  if (c.links.length) meta.push(`<span aria-label="Link">${ICON.link}${c.links.length}</span>`);
+  if (on('links') && c.links.length) meta.push(`<span aria-label="Link">${ICON.link}${c.links.length}</span>`);
   if (c.messages?.length) meta.push(`<span aria-label="Messaggi">${ICON.msg}${c.messages.length}</span>`);
-  if (c.members?.length) meta.push(avatars(c.members));
+  if (on('members') && c.members?.length) meta.push(avatars(c.members));
   return `<article class="card" tabindex="0" data-card="${c.id}">
     ${labs.length ? `<div class="labels">${labs.map(l => `<span class="lab" style="--c:${l.color}">${esc(l.name)}</span>`).join('')}</div>` : ''}
     <h3 class="card-title">${esc(c.title)}</h3>
@@ -585,7 +605,7 @@ function updateSeg() {
 /* Scheda aperta: titolo, poi una riga di pillole. Descrizione e Messaggi ci sono sempre;
    Checklist, Link, Scadenza ed Etichette compaiono solo se li aggiungi. Sotto, il contenuto della pillola scelta. */
 const MODULES = { checklist: 'Checklist', links: 'Link', due: 'Scadenza', labels: 'Etichette', members: 'Membri' };
-const ui = { tab: 'desc', menu: null, adding: false, addingItem: false, editDesc: false, draft: '' };
+const ui = { tab: 'desc', menu: null, confirm: null, addingItem: false, editDesc: false, draft: '' };
 
 const dayOf = ms => new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(ms));
 const fmtTime = ms => {
@@ -605,18 +625,40 @@ function pillsHTML(c) {
     if (k === 'members') out.push(pill(k, `Membri${c.members.length ? avatars(c.members) : ''}`));
     if (k === 'labels') { const labs = c.labels.map(labelOf).filter(Boolean); out.push(pill(k, `Etichette${labs.length ? `<span class="dots">${labs.map(l => `<i style="--c:${l.color}"></i>`).join('')}</span>` : ''}`)); }
   }
-  const missing = Object.keys(MODULES).filter(k => !c.modules.includes(k));
-  if (missing.length) {
-    const icons = { checklist: ICON.check, links: ICON.link, due: ICON.cal, labels: ICON.tag, members: ICON.person };
-    out.push(`<span class="add-wrap">
-      <button type="button" class="ghost-pill" data-addtoggle aria-haspopup="menu" aria-expanded="${ui.menu === 'add'}">${ICON.plus}Aggiungi</button>
-      ${ui.menu === 'add' ? `<div class="menu" role="menu">${missing.map(k => `<button type="button" class="mi" role="menuitem" data-module="${k}">${icons[k]}${MODULES[k]}</button>`).join('')}</div>` : ''}
-    </span>`);
-  }
+  out.push(`<span class="add-wrap">
+    <button type="button" class="ghost-pill plus-pill" data-addtoggle aria-label="Moduli della scheda" aria-haspopup="menu" aria-expanded="${ui.menu === 'add'}">${ICON.plus}</button>
+    ${ui.menu === 'add' ? `<div class="menu" role="menu">${Object.keys(MODULES).map(k => {
+      const shown = c.modules.includes(k), hint = shown ? '' : contentHint(c, k);
+      return `<button type="button" class="mi" role="menuitemcheckbox" aria-checked="${shown}" data-module="${k}">
+        <span class="mk">${shown ? ICON.tick : ''}</span>${MODULES[k]}${hint ? `<small>${hint}</small>` : ''}</button>`;
+    }).join('')}</div>` : ''}
+  </span>`);
   return `<div class="pills" role="tablist">${out.join('')}</div>`;
 }
 
-const rmModule = k => `<button type="button" class="rm-module" data-rmmodule="${k}">Rimuovi ${MODULES[k].toLowerCase()} dalla scheda</button>`;
+const plural = (n, one, many) => n === 1 ? one : `${n} ${many}`;
+/* Cosa contiene un modulo: serve per l'indicazione nel menu e per il testo dell'avviso */
+function contentHint(c, k) {
+  if (k === 'checklist' && c.checklist.length) return plural(c.checklist.length, '1 elemento', 'elementi');
+  if (k === 'links' && c.links.length) return plural(c.links.length, '1 link', 'link');
+  if (k === 'due' && c.due) return fmtShort(c.due);
+  if (k === 'labels' && c.labels.length) return plural(c.labels.length, '1 etichetta', 'etichette');
+  if (k === 'members' && c.members.length) return plural(c.members.length, '1 persona', 'persone');
+  return '';
+}
+function confirmText(c, k) {
+  const n = { checklist: c.checklist.length, links: c.links.length, labels: c.labels.length, members: c.members.length }[k];
+  if (k === 'checklist') return n === 1 ? 'L’elemento verrà cancellato definitivamente.' : `I ${n} elementi verranno cancellati definitivamente.`;
+  if (k === 'links') return n === 1 ? 'Il link verrà cancellato definitivamente.' : `I ${n} link verranno cancellati definitivamente.`;
+  if (k === 'due') return `La scadenza del ${fmtLong(c.due)} verrà cancellata.`;
+  if (k === 'labels') return n === 1 ? 'L’etichetta verrà tolta dalla scheda.' : `Le ${n} etichette verranno tolte dalla scheda.`;
+  return n === 1 ? 'La persona verrà tolta dalla scheda.' : `Le ${n} persone verranno tolte dalla scheda.`;
+}
+/* "…" in alto a destra di ogni modulo, con Elimina */
+const rmModule = k => `<div class="more-wrap mod-more">
+  <button class="icon-btn" type="button" data-modmore aria-label="Altre azioni" aria-expanded="${ui.menu === 'mod'}">${ICON.more}</button>
+  ${ui.menu === 'mod' ? `<div class="menu right"><button type="button" class="danger" data-rmmodule="${k}">Elimina ${MODULES[k].toLowerCase()}</button></div>` : ''}
+</div>`;
 
 function panelHTML(c) {
   const col = colOf(c.col);
@@ -637,7 +679,7 @@ function panelHTML(c) {
         ${ui.addingItem || !total
           ? `<div class="add-row"><input class="inline" id="f-newitem" placeholder="Aggiungi un elemento" enterkeyhint="done"></div>`
           : `<button type="button" class="add-item" data-additem>${ICON.plus}Aggiungi un elemento</button>`}
-        ${rmModule('checklist')}`;
+`;
     }
     case 'links':
       return `${c.links.map(l => `<div class="link-row">${ICON.link}
@@ -645,7 +687,7 @@ function panelHTML(c) {
           <button type="button" class="rm" aria-label="Rimuovi link" data-rmlink="${l.id}">${ICON.x}</button>
         </div>`).join('')}
         <div class="add-row"><input class="inline" id="f-newlink" type="url" placeholder="Incolla un link e premi Invio" enterkeyhint="done"></div>
-        ${rmModule('links')}`;
+`;
     case 'due': {
       let text = 'Nessuna data', cls = 'none';
       if (c.due) {
@@ -660,16 +702,16 @@ function panelHTML(c) {
           <button type="button" data-duequick="7">Tra una settimana</button>
         </div>
         <input type="date" id="f-due" class="date-field" value="${c.due || ''}" aria-label="Scegli una data">
-        ${rmModule('due')}`;
+`;
     }
     case 'labels':
       return `<div class="chips">${state.labels.map(l => `<button type="button" class="chip" style="--c:${l.color}" aria-pressed="${c.labels.includes(l.id)}" data-label="${l.id}">${esc(l.name)}</button>`).join('')}</div>
-        ${rmModule('labels')}`;
+`;
     case 'members':
       return `${state.people.map(p => `<button type="button" class="member-row" aria-pressed="${c.members.includes(p.id)}" data-member="${p.id}">
           ${avatars([p.id])}<span class="who"><b>${esc(p.name)}</b><small>${esc(p.role)}</small></span><span class="mk">${ICON.tick}</span>
         </button>`).join('')}
-        ${rmModule('members')}`;
+`;
     default:
       /* Descrizione: si legge come testo; tocchi il testo (o "Modifica") per scriverla, poi Salva */
       if (ui.editDesc) return `<textarea id="f-notes" class="desc-edit" placeholder="Aggiungi una descrizione più dettagliata…">${esc(ui.draft)}</textarea>
@@ -698,7 +740,12 @@ function renderSheet(opts = {}) {
       <textarea id="f-title" class="f-title" rows="1" aria-label="Titolo">${esc(c.title)}</textarea>
       ${pillsHTML(c)}
     </div>
-    <div class="sheet-panel" data-panel="${ui.tab}" role="tabpanel">${panelHTML(c)}</div>
+    <div class="sheet-panel" data-panel="${ui.tab}" role="tabpanel">${MODULES[ui.tab] ? rmModule(ui.tab) : ''}${panelHTML(c)}</div>
+    ${ui.confirm ? `<div class="alert-wrap"><div class="alert" role="alertdialog" aria-modal="true" aria-labelledby="alert-t" aria-describedby="alert-d">
+      <h3 id="alert-t">Eliminare ${{ checklist: 'la checklist', links: 'i link', due: 'la scadenza', labels: 'le etichette', members: 'i membri' }[ui.confirm]}?</h3>
+      <p id="alert-d">${confirmText(c, ui.confirm)}</p>
+      <div class="alert-actions"><button type="button" class="strong" data-alertcancel>Annulla</button><button type="button" class="danger" data-alertok>Elimina</button></div>
+    </div></div>` : ''}
     ${ui.tab === 'msg' ? `<form class="composer" id="composer">
       <input id="f-msg" placeholder="Scrivi un messaggio" autocomplete="off" enterkeyhint="send" aria-label="Messaggio">
       <button type="submit" class="send" aria-label="Invia">${ICON.up}</button>
@@ -708,12 +755,13 @@ function renderSheet(opts = {}) {
   /* Il menu Aggiungi si apre verso sinistra se a destra non c'è spazio */
   const addMenu = sheet.querySelector('.add-wrap .menu');
   if (addMenu && addMenu.getBoundingClientRect().right > sheet.getBoundingClientRect().right - 12) addMenu.classList.add('right');
+  if (ui.confirm) sheet.querySelector('[data-alertcancel]').focus();
 }
 function openCard(cid) {
   state.open = cid;
   const c = cardOf(cid);
   c.messages ||= []; c.modules ||= []; c.members ||= [];
-  Object.assign(ui, { tab: 'desc', menu: null, adding: false, addingItem: false, editDesc: false, draft: '' });
+  Object.assign(ui, { tab: 'desc', menu: null, confirm: null, addingItem: false, editDesc: false, draft: '' });
   sheetEl.innerHTML = `<div class="scrim" data-close></div><div class="sheet" role="dialog" aria-modal="true" aria-label="Scheda"></div>`;
   sheetEl.hidden = false;
   renderSheet();
@@ -861,6 +909,15 @@ function finishDrag() {
 }
 
 /* Eventi scheda aperta */
+function deleteModule(c, k) {
+  c.modules = c.modules.filter(x => x !== k);
+  if (k === 'checklist') c.checklist = [];
+  if (k === 'links') c.links = [];
+  if (k === 'due') c.due = null;
+  if (k === 'labels') c.labels = [];
+  if (k === 'members') c.members = [];
+  ui.tab = 'desc';
+}
 function saveDesc(c) { if (ui.editDesc) { c.notes = ui.draft.trim(); ui.editDesc = false; } }
 sheetEl.addEventListener('click', e => {
   const c = cardOf(state.open); if (!c) return;
@@ -875,26 +932,33 @@ sheetEl.addEventListener('click', e => {
   if (t.closest('[data-more]')) { ui.menu = ui.menu === 'more' ? null : 'more'; renderSheet(); return; }
   if (t.closest('[data-delete]')) { state.cards.splice(state.cards.indexOf(c), 1); return closeSheet(); }
   if (t.closest('[data-addtoggle]')) { ui.menu = ui.menu === 'add' ? null : 'add'; renderSheet(); return; }
+  /* Spunta tolta: il modulo si nasconde ma il contenuto resta. Spunta rimessa: torna com'era */
   const mod = t.closest('[data-module]');
   if (mod) {
     const k = mod.dataset.module;
-    c.modules.push(k); ui.tab = k; ui.menu = null; ui.addingItem = true;
+    ui.menu = null;
+    if (c.modules.includes(k)) {
+      c.modules = c.modules.filter(x => x !== k);
+      if (ui.tab === k) ui.tab = 'desc';
+      renderSheet(); return;
+    }
+    c.modules.push(k); ui.tab = k; ui.addingItem = true;
     renderSheet();
-    if (k === 'checklist') focusEnd('#f-newitem');
+    if (k === 'checklist' && !c.checklist.length) focusEnd('#f-newitem');
     if (k === 'links') focusEnd('#f-newlink');
     return;
   }
+  if (t.closest('[data-modmore]')) { ui.menu = ui.menu === 'mod' ? null : 'mod'; renderSheet(); return; }
+  /* Elimina dal "…" del modulo: se c'è contenuto chiede conferma, se è vuoto toglie subito */
   const rmm = t.closest('[data-rmmodule]');
   if (rmm) {
     const k = rmm.dataset.rmmodule;
-    c.modules = c.modules.filter(x => x !== k);
-    if (k === 'checklist') c.checklist = [];
-    if (k === 'links') c.links = [];
-    if (k === 'due') c.due = null;
-    if (k === 'labels') c.labels = [];
-    if (k === 'members') c.members = [];
-    ui.tab = 'desc'; renderSheet(); return;
+    ui.menu = null;
+    if (contentHint(c, k)) ui.confirm = k; else deleteModule(c, k);
+    renderSheet(); return;
   }
+  if (t.closest('[data-alertcancel]')) { ui.confirm = null; renderSheet(); return; }
+  if (t.closest('[data-alertok]')) { deleteModule(c, ui.confirm); ui.confirm = null; renderSheet(); return; }
   const tab = t.closest('[data-tab]');
   if (tab) { saveDesc(c); ui.tab = tab.dataset.tab; ui.addingItem = false; renderSheet({ bottom: true }); return; }
   if (t.closest('[data-additem]')) { ui.addingItem = true; renderSheet(); focusEnd('#f-newitem'); return; }
@@ -937,6 +1001,7 @@ sheetEl.addEventListener('keydown', e => {
   const t = e.target;
   if (t.id === 'f-notes' && e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); saveDesc(c); renderSheet(); return; }
   if (e.key === 'Escape') {
+    if (ui.confirm) { ui.confirm = null; renderSheet(); return; }
     if (ui.menu) { ui.menu = null; renderSheet(); return; }
     if (ui.editDesc) { ui.editDesc = false; renderSheet(); return; }
     if (t.id === 'f-newitem' && c.checklist.length) { ui.addingItem = false; renderSheet(); return; }

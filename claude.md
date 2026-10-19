@@ -41,23 +41,42 @@ A queste si aggiungono **una o più colonne variabili**:
 - le tre colonne fisse non si eliminano, ma il loro titolo è modificabile come quello delle altre.
 
 ### 3.3 Schede
-Ogni scheda contiene:
+Ogni scheda contiene sempre:
 
 - **Titolo** (obbligatorio)
-- **Note**: testo libero
-- **Scadenza**: una data, con evidenza visiva se vicina o passata
-- **Etichette colore**: per cliente, priorità o tipo di lavoro. Ogni bacheca ha il suo set di etichette.
-- **Checklist**: passaggi da spuntare, con l'avanzamento visibile sulla scheda (es. 2/5)
+- **Descrizione**: testo libero
+- **Messaggi**: conversazione sulla scheda. Nella beta serve come diario; con la condivisione (sezione 9) diventa la chat con il cliente.
+
+E, solo se aggiunti, questi **moduli**:
+
+- **Checklist**: elementi da spuntare, con l'avanzamento visibile sulla scheda (es. 2/5)
 - **Link**: uno o più link, con titolo opzionale
+- **Scadenza**: una data, con evidenza visiva se vicina (arancione) o passata (rosso)
+- **Etichette colore**: per cliente, priorità o tipo di lavoro. Ogni bacheca ha il suo set di etichette.
+- **Membri**: le persone coinvolte nella scheda
 
 **Niente allegati.** Non si caricano file: solo link esterni.
 
+#### Dettaglio della scheda
+Aprendo una scheda si vede, dall'alto in basso:
+
+1. il **titolo**;
+2. una riga di **pillole** allo stesso livello: *Descrizione*, *Messaggi*, poi i moduli aggiunti, e per ultimo un pulsante **+**. Le pillole vanno a capo, non scorrono;
+3. sotto, il **contenuto della sola pillola scelta**.
+
+Regole dei moduli:
+
+- Il **+** apre un menu a tendina con tutti i moduli e una spunta accanto a quelli visibili.
+- **Spuntare** un modulo lo mostra. **Togliere la spunta lo nasconde ma non ne cancella il contenuto**: rimettendo la spunta torna com'era. Nel menu, accanto a un modulo nascosto con contenuto, compare un'indicazione grigia (es. "5 elementi").
+- Un modulo nascosto non compare da nessuna parte, nemmeno sulla scheda in colonna: una scadenza nascosta non dà avvisi.
+- **Eliminare** un modulo si fa solo dal suo contenuto, dal menu "…" in alto a destra. Se il modulo ha contenuto, un avviso chiede conferma dicendo cosa si perde (es. "I 5 elementi verranno cancellati definitivamente"), con **Annulla** come scelta predefinita.
+- La descrizione si legge come testo; toccandola si apre la modifica, con **Salva** e **Annulla**.
+- La checklist è nello stile di Trello: barra di avanzamento con percentuale, quadratini da spuntare, elementi fatti barrati.
+- "Elimina scheda" sta nel menu "…" in alto a sinistra.
+
 Azioni sulle schede:
 - creare, modificare, eliminare;
-- trascinare tra colonne e riordinare dentro la colonna;
-- su telefono, oltre al trascinamento, un comando "Sposta in…" per cambiare colonna.
-
-> Altri dettagli della scheda: **da completare**.
+- trascinare tra colonne e riordinare dentro la colonna, anche su telefono (tenendo premuta la scheda). Non c'è un comando separato per cambiare colonna.
 
 ## 4. Design
 
@@ -69,7 +88,7 @@ Azioni sulle schede:
 - Scala tipografica definita e rispettata, con pochi pesi e una gerarchia chiara.
 - Palette ridotta: il colore compare solo dove ha un significato (etichette, scadenze).
 - Tema chiaro e scuro.
-- Responsive: deve funzionare bene **sia su computer sia su telefono**. Su telefono le colonne scorrono in orizzontale, una alla volta.
+- Responsive: deve funzionare bene **sia su computer sia su telefono**. Le colonne hanno larghezza fissa (come su Trello) e restano affiancate anche su telefono, dove scorrono in orizzontale. Le schede prendono la larghezza della colonna e l'altezza dal contenuto; i titoli non vengono mai tagliati.
 - Date e scadenze nel fuso orario italiano (Europe/Rome).
 - Interfaccia in italiano.
 
@@ -97,8 +116,10 @@ Azioni sulle schede:
 boards          id, titolo, posizione, created_at
 columns         id, board_id, titolo, tipo ('io' | 'cliente' | 'fatto' | 'variabile'), posizione
 labels          id, board_id, nome, colore
-cards           id, column_id, board_id, titolo, note, scadenza (date), posizione, created_at, updated_at
+cards           id, column_id, board_id, titolo, descrizione, scadenza (date), moduli_visibili (elenco), posizione, created_at, updated_at
 card_labels     card_id, label_id
+card_members    card_id, membro
+messages        id, card_id, autore, testo, created_at
 checklist_items id, card_id, testo, completato, posizione
 links           id, card_id, url, titolo, posizione
 ```
@@ -132,7 +153,7 @@ Quando FLOW sarà aperto ai clienti:
 
 ## 10. Da decidere
 
-- [ ] Altri dettagli della scheda
+- [x] Struttura del dettaglio della scheda (sezione 3.3)
 - [x] Titolo delle colonne fisse modificabile: sì
 - [ ] Set di etichette predefinito per le nuove bacheche
 - [ ] Archivio delle schede in "Fatto" dopo un certo tempo, o restano lì
