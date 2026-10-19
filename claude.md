@@ -101,6 +101,7 @@ Azioni sulle schede:
 - Scala tipografica definita e rispettata, con pochi pesi e una gerarchia chiara.
 - Palette ridotta: il colore compare solo dove ha un significato (etichette, scadenze).
 - Tema chiaro e scuro.
+- Su telefono (tema Sistema) i testi seguono le misure di iOS: corpo 17, titolo della scheda 26 in grassetto. In entrambi i temi le icone ✕ e "…" sono grandi e facili da toccare, e la pagina non si ingrandisce da sola toccando un campo di testo.
 - **Due temi grafici**, scelti dalla voce **Tema** in alto a destra nella pagina iniziale (la scelta vale per il singolo dispositivo):
   - **Sistema**: lo stile Apple descritto sopra.
   - **Carta**: come un planner stampato. Bianco e nero, linee sottili nere o grigie al posto di riquadri e ombre, titoli in **maiuscolo con spaziatura ampia**, carattere **Geologica** (Google Fonts, con latino esteso, cirillico e greco per eventuali traduzioni). Titoli di pagina centrati e in grassetto. Nella pagina iniziale ogni bacheca è un riquadro bianco con il bordo nero sottile ("+ Nuova bacheca" tratteggiato). Le schede sono righe separate da una linea sottile; le colonne hanno il titolo centrato sopra una linea nera. Il colore resta solo dove ha un significato (scadenze, pallini delle etichette).
