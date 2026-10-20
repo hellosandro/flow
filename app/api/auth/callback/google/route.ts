@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
 import { SESSION_COOKIE, SESSION_DAYS, STATE_COOKIE, makeSession } from '@/lib/auth';
-import { canEnter, rememberUser } from '@/lib/store';
+import { canEnter, ensureHome, rememberUser } from '@/lib/store';
 
 /* Google rimanda qui con un codice: lo si scambia con i dati dell'utente (email, nome, foto).
-   Entra solo chi è amministratore o è stato invitato in almeno uno spazio. */
+   Entra solo chi è amministratore, ha un invito a Flow o è stato invitato in uno spazio. */
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const back = (e: string) => {
@@ -38,6 +38,7 @@ export async function GET(req: Request) {
 
   const user = { email, name: profile.name || email.split('@')[0], picture: profile.picture || '' };
   await rememberUser(user);
+  await ensureHome(user);
   const res = NextResponse.redirect(new URL('/', url.origin));
   res.cookies.set(STATE_COOKIE, '', { path: '/', maxAge: 0 });
   res.cookies.set(SESSION_COOKIE, await makeSession(user), {

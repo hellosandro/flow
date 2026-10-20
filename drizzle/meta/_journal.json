@@ -36,6 +36,13 @@
       "when": 1792495134489,
       "tag": "0004_spazi_e_utenti",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792501678131,
+      "tag": "0005_studi_su_invito",
+      "breakpoints": true
     }
   ]
 }
