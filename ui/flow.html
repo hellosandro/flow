@@ -1123,7 +1123,7 @@ function cardHTML(c, col) {
   if (total) meta.push(`<span class="${done === total ? 'check-done' : ''}">${ICON.check}${done}/${total}</span>`);
   if (full && c.notes) meta.push(`<span aria-label="Ha delle note">${ICON.note}</span>`);
   if (full && on('links') && c.links.length) meta.push(`<span aria-label="Link">${ICON.link}${c.links.length}</span>`);
-  if (full && c.messages?.length) meta.push(`<span aria-label="Messaggi">${ICON.msg}${c.messages.length}</span>`);
+  if (full && c.messages?.length) meta.push(`<span aria-label="Commenti">${ICON.msg}${c.messages.length}</span>`);
   if (full && on('members') && c.members?.length) meta.push(avatars(c.members));
   return `<article class="card" tabindex="0" data-card="${c.id}" style="--pi: var(--pi-${tintOf(c)})">
     ${labs.length ? `<div class="labels">${labs.map(l => `<span class="lab" style="--c:${l.color}">${esc(l.name)}</span>`).join('')}</div>` : ''}
@@ -1226,7 +1226,7 @@ function navHTML(c) {
   const col = colOf(c.col);
   const item = (k, label, meta = '') => `<button type="button" class="nav-item" role="tab" aria-selected="${ui.tab === k}" data-tab="${k}">
     ${MOD_ICON[k]}<span class="nl">${label}</span>${meta ? `<span class="nm">${meta}</span>` : ''}</button>`;
-  const out = [item('desc', 'Descrizione'), item('msg', 'Messaggi', c.messages.length || '')];
+  const out = [item('desc', 'Descrizione'), item('msg', 'Commenti', c.messages.length || '')];
   for (const k of c.modules) {
     if (k === 'checklist') out.push(item(k, 'Checklist', c.checklist.length ? `${c.checklist.filter(i => i.done).length}/${c.checklist.length}` : ''));
     if (k === 'links') out.push(item(k, 'Link', c.links.length || ''));
@@ -1275,14 +1275,14 @@ function panelHTML(c) {
               ${ui.editMsg === m.id
                 ? `<div class="msg-edit"><div class="rte">
                     <div class="rte-bar" role="toolbar" aria-label="Formattazione">${ui.linking === 'f-msgedit' ? linkInput() : rteBar({ headings: false })}</div>
-                    <div id="f-msgedit" class="rte-area rich" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Modifica messaggio">${ui.msgEditDraft}</div>
+                    <div id="f-msgedit" class="rte-area rich" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Modifica commento">${ui.msgEditDraft}</div>
                   </div>
                   <div class="desc-actions"><button type="button" class="btn-fill" data-savemsg>Salva</button><button type="button" class="btn-plain" data-cancelmsg>Annulla</button></div></div>`
                 : `<div class="msg-body rich">${m.html}</div>
                   ${m.me ? `<div class="msg-actions"><button type="button" data-editmsg="${m.id}">Modifica</button><span aria-hidden="true">·</span><button type="button" data-delmsg="${m.id}">Elimina</button></div>` : ''}`}
             </article>`;
           }).join('')}</div>`
-        : `<p class="empty">Nessun messaggio. Quando FLOW sarà condiviso, qui scriverai con il cliente.</p>`;
+        : `<p class="empty">Nessun commento. Scrivi qui note e domande su questa scheda: le leggerà chi lavora con te.</p>`;
     case 'checklist': {
       const total = c.checklist.length, done = c.checklist.filter(i => i.done).length;
       const pct = total ? Math.round(done / total * 100) : 0;
@@ -1365,13 +1365,13 @@ function renderSheet(opts = {}) {
   const scroll = old && old.dataset.panel === ui.tab ? old.scrollTop : 0;
   sheet.className = 'sheet side';
   sheet.style.setProperty('--pi', `var(--pi-${tintOf(c)})`);
-  const secName = { desc: 'Descrizione', msg: 'Messaggi', ...MODULES }[ui.tab];
+  const secName = { desc: 'Descrizione', msg: 'Commenti', ...MODULES }[ui.tab];
   const panelInner = `<div class="sheet-panel" data-panel="${ui.tab}" role="tabpanel"><h3 class="sec-title">${secName}</h3>${panelHTML(c)}</div>
     ${ui.tab === 'msg' ? `<form class="composer" id="composer">
       ${ui.fmt ? `<div class="rte-bar mini" role="toolbar" aria-label="Formattazione">${ui.linking === 'f-msg' ? linkInput() : rteBar({ headings: false })}</div>` : ''}
       <div class="composer-row">
         <button type="button" class="aa-btn" data-fmt aria-pressed="${!!ui.fmt}" aria-label="Formattazione del testo" title="Formattazione">Aa</button>
-        <div id="f-msg" class="msg-input rich" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Messaggio" data-placeholder="Scrivi un messaggio">${ui.msgDraft || ''}</div>
+        <div id="f-msg" class="msg-input rich" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Commento" data-placeholder="Scrivi un commento">${ui.msgDraft || ''}</div>
         <button type="submit" class="send" aria-label="Invia" title="Invia (Cmd+Invio)">${ICON.up}</button>
       </div>
     </form>` : ''}`;
@@ -1410,8 +1410,8 @@ function renderSheet(opts = {}) {
       ${navHTML(c)}
     </div>
     ${ui.confirm ? `<div class="alert-wrap"><div class="alert" role="alertdialog" aria-modal="true" aria-labelledby="alert-t" aria-describedby="alert-d">
-      <h3 id="alert-t">Eliminare ${{ card: 'la scheda', msg: 'il messaggio', checklist: 'la checklist', links: 'i link', due: 'la scadenza', labels: 'le etichette', members: 'i membri' }[ui.confirm]}?</h3>
-      <p id="alert-d">${ui.confirm === 'card' ? 'La scheda e tutto il suo contenuto (descrizione, messaggi e moduli) verranno cancellati definitivamente.' : ui.confirm === 'msg' ? 'Il messaggio verrà cancellato definitivamente.' : confirmText(c, ui.confirm)}</p>
+      <h3 id="alert-t">Eliminare ${{ card: 'la scheda', msg: 'il commento', checklist: 'la checklist', links: 'i link', due: 'la scadenza', labels: 'le etichette', members: 'i membri' }[ui.confirm]}?</h3>
+      <p id="alert-d">${ui.confirm === 'card' ? 'La scheda e tutto il suo contenuto (descrizione, commenti e moduli) verranno cancellati definitivamente.' : ui.confirm === 'msg' ? 'Il commento verrà cancellato definitivamente.' : confirmText(c, ui.confirm)}</p>
       <div class="alert-actions"><button type="button" class="strong" data-alertcancel>Annulla</button><button type="button" class="danger" data-alertok>Elimina</button></div>
     </div></div>` : ''}`;
   const panel = sheet.querySelector('.sheet-panel');
