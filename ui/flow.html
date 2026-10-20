@@ -3,7 +3,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geologica:wght@300;400;500;600&display=swap">
-<script>try { document.documentElement.dataset.skin = localStorage.getItem('flow-skin') || 'sistema'; } catch {}</script>
+<script>try { document.documentElement.dataset.skin = localStorage.getItem('flow-skin') || 'carta'; } catch {}</script>
 <style>
 /* Layout: barra in alto con titolo grande in stile iOS, sotto le colonne affiancate a larghezza fissa che scorrono in orizzontale, come su Trello, anche su telefono. */
 :root {
@@ -308,6 +308,17 @@ body.grabbing, body.grabbing * { cursor: grabbing !important; }
 }
 .chip::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--c); }
 .chip[aria-pressed="true"] { background: color-mix(in srgb, var(--c) 14%, var(--surface)); box-shadow: inset 0 0 0 1.5px var(--c); font-weight: 600; }
+.lab-edit { display: grid; gap: 6px; }
+.lab-row { display: flex; align-items: center; gap: 10px; border-bottom: .5px solid var(--sep); padding: 2px 0; }
+.lab-dot { --c: var(--blue); width: 18px; height: 18px; border-radius: 50%; background: var(--c); flex: none; }
+.lab-name { flex: 1; min-width: 0; font: var(--t-body); color: var(--label); background: none; border: 0; padding: 9px 0; }
+.lab-name:focus { outline: none; }
+.lab-del { width: 28px; height: 28px; display: grid; place-items: center; color: var(--label-3); flex: none; }
+.lab-del svg.i { width: 14px; height: 14px; }
+.lab-del:hover { color: var(--red); }
+.lab-add { display: flex; align-items: center; gap: 8px; font: var(--t-body); color: var(--blue); padding: 9px 0; }
+.lab-add svg.i { width: 16px; height: 16px; }
+.lab-note { font: var(--t-cap); color: var(--label-2); margin: 4px 0 0; }
 .link { flex: 1; min-width: 0; display: grid; padding: 9px 0; text-decoration: none; color: inherit; }
 .link b { font: var(--t-body); color: var(--blue); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .link small { font: var(--t-cap); color: var(--label-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -867,17 +878,17 @@ const host = u => { try { return new URL(u).hostname.replace(/^www\./, ''); } ca
 
 let state = null;
 
-/* Ogni bacheca nasce con le tre colonne fisse e il set di etichette di base */
+/* Ogni bacheca nasce con le tre colonne fisse e un set di etichette di base, modificabili */
 function makeBoard(title, cards = []) {
   const b = {
     id: id(), title, created: today, view: 'essential', adding: null, open: null,
-    labels: [['Logo', 'blue'], ['Stampa', 'orange'], ['Web', 'teal'], ['Amministrazione', 'purple'], ['Urgente', 'red']].map(([name, c]) => ({ id: id(), name, color: `var(--${c})` })),
+    labels: [['Urgente', 'red'], ['In attesa', 'orange'], ['Cliente', 'blue'], ['Interno', 'purple'], ['Idea', 'teal']].map(([name, c]) => ({ id: id(), name, color: `var(--${c})` })),
     space, people: peopleOf(space),
     columns: [['In corso', 'in_corso'], ['In revisione', 'in_revisione'], ['Fatto', 'fatto']].map(([t, type]) => ({ id: id(), title: t, type }))
   };
   b.cards = cards.map(([col, t, due]) => ({
     id: id(), col: b.columns[col].id, title: t, labels: [], due: due == null ? null : addDays(today, due),
-    notes: '', checklist: [], links: [], messages: [], members: [], modules: due == null ? [] : ['due']
+    notes: '', checklist: [], links: [], messages: [], members: [], modules: Object.keys(MODULES)
   }));
   return b;
 }
@@ -1154,6 +1165,7 @@ function updateSeg() {
 /* Scheda aperta: titolo, poi una riga di pillole. Descrizione e Messaggi ci sono sempre;
    Checklist, Link, Scadenza ed Etichette compaiono solo se li aggiungi. Sotto, il contenuto della pillola scelta. */
 const MODULES = { checklist: 'Checklist', links: 'Link', due: 'Scadenza', labels: 'Etichette', members: 'Membri' };
+const LABEL_COLORS = ['blue', 'green', 'orange', 'red', 'purple', 'teal', 'pink'];
 const ui = { navOpen: false, tab: 'desc', menu: null, confirm: null, addingItem: false, editDesc: false, draft: '' };
 
 const dayOf = ms => new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(ms));
@@ -1309,7 +1321,19 @@ function panelHTML(c) {
 `;
     }
     case 'labels':
+      /* le etichette sono della bacheca: si rinominano, si colorano, si aggiungono e si eliminano qui */
+      if (ui.editLabels) return `<div class="lab-edit">
+          ${state.labels.map(l => `<div class="lab-row">
+            <button type="button" class="lab-dot" style="--c:${l.color}" data-labcolor="${l.id}" aria-label="Cambia colore" title="Cambia colore"></button>
+            <input class="lab-name" data-labname="${l.id}" value="${esc(l.name)}" placeholder="Nome" aria-label="Nome dell'etichetta" enterkeyhint="done">
+            <button type="button" class="lab-del" data-labdel="${l.id}" aria-label="Elimina etichetta" title="Elimina">${ICON.x}</button>
+          </div>`).join('')}
+          <button type="button" class="lab-add" data-labadd>${ICON.plus}Nuova etichetta</button>
+          <p class="lab-note">Le etichette valgono per tutte le schede della bacheca.</p>
+          <button type="button" class="desc-hint" data-labdone>Fine</button>
+        </div>`;
       return `<div class="chips">${state.labels.map(l => `<button type="button" class="chip" style="--c:${l.color}" aria-pressed="${c.labels.includes(l.id)}" data-label="${l.id}">${esc(l.name)}</button>`).join('')}</div>
+        <button type="button" class="desc-hint" data-labedit>Modifica etichette</button>
 `;
     case 'members':
       return `${state.people.map(p => `<button type="button" class="member-row" aria-pressed="${c.members.includes(p.id)}" data-member="${p.id}">
@@ -1401,7 +1425,7 @@ function openCard(cid) {
   state.open = cid;
   const c = cardOf(cid);
   c.messages ||= []; c.modules ||= []; c.members ||= [];
-  Object.assign(ui, { editMsg: null, msgEditDraft: '', delMsg: null, msgDraft: '', fmt: false, linking: false, navOpen: false, tab: 'desc', menu: null, confirm: null, addingItem: false, editDesc: false, draft: '' });
+  Object.assign(ui, { editMsg: null, msgEditDraft: '', delMsg: null, msgDraft: '', fmt: false, linking: false, navOpen: false, tab: 'desc', menu: null, confirm: null, addingItem: false, editDesc: false, draft: '', editLabels: false });
   sheetEl.innerHTML = `<div class="scrim" data-close></div><div class="sheet" role="dialog" aria-modal="true" aria-label="Scheda"></div>`;
   sheetEl.hidden = false;
   renderSheet();
@@ -1435,7 +1459,7 @@ boardEl.addEventListener('keydown', e => {
       if (t) {
         const colId = state.adding;
         const last = state.cards.map(c => c.col).lastIndexOf(colId);
-        state.cards.splice(last + 1, 0, { id: id(), col: colId, title: t, labels: [], due: null, notes: '', checklist: [], links: [], messages: [], members: [], modules: [] });
+        state.cards.splice(last + 1, 0, { id: id(), col: colId, title: t, labels: [], due: null, notes: '', checklist: [], links: [], messages: [], members: [], modules: Object.keys(MODULES) });
         renderBoard();
         document.querySelector(`[data-list="${colId}"]`).scrollTop = 1e6;
       }
@@ -1777,10 +1801,35 @@ sheetEl.addEventListener('click', e => {
   if (t.closest('[data-alertok]') && ui.confirm === 'card') { ui.confirm = null; state.cards.splice(state.cards.indexOf(c), 1); return closeSheet(); }
   if (t.closest('[data-alertok]')) { deleteModule(c, ui.confirm); ui.confirm = null; renderSheet(); return; }
   const tab = t.closest('[data-tab]');
-  if (tab) { saveDesc(c); ui.editMsg = null; ui.navOpen = false; ui.tab = tab.dataset.tab; ui.addingItem = false; renderSheet({ bottom: true }); return; }
+  if (tab) { saveDesc(c); ui.editMsg = null; ui.navOpen = false; ui.tab = tab.dataset.tab; ui.addingItem = false; ui.editLabels = false; renderSheet({ bottom: true }); return; }
   if (t.closest('[data-additem]')) { ui.addingItem = true; renderSheet(); focusEnd('#f-newitem'); return; }
   const q = t.closest('[data-duequick]');
   if (q) { c.due = addDays(today, +q.dataset.duequick); renderSheet(); return; }
+  if (t.closest('[data-labedit]')) { ui.editLabels = true; renderSheet(); return; }
+  if (t.closest('[data-labdone]')) {
+    /* le etichette rimaste senza nome spariscono */
+    const empty = new Set(state.labels.filter(l => !l.name.trim()).map(l => l.id));
+    state.labels = state.labels.filter(l => !empty.has(l.id));
+    state.cards.forEach(k => { k.labels = k.labels.filter(x => !empty.has(x)); });
+    ui.editLabels = false; renderSheet(); return;
+  }
+  if (t.closest('[data-labadd]')) {
+    state.labels.push({ id: id(), name: '', color: `var(--${LABEL_COLORS[state.labels.length % LABEL_COLORS.length]})` });
+    renderSheet(); focusEnd('.lab-row:last-of-type .lab-name'); return;
+  }
+  const lc = t.closest('[data-labcolor]');
+  if (lc) {
+    const l = state.labels.find(x => x.id === lc.dataset.labcolor);
+    const i = LABEL_COLORS.findIndex(k => l.color === `var(--${k})`);
+    l.color = `var(--${LABEL_COLORS[(i + 1) % LABEL_COLORS.length]})`; renderSheet(); return;
+  }
+  const ld = t.closest('[data-labdel]');
+  if (ld) {
+    const lid = ld.dataset.labdel;
+    state.labels = state.labels.filter(x => x.id !== lid);
+    state.cards.forEach(k => { k.labels = k.labels.filter(x => x !== lid); });
+    renderSheet(); return;
+  }
   const lab = t.closest('[data-label]');
   if (lab) { const l = lab.dataset.label; c.labels = c.labels.includes(l) ? c.labels.filter(x => x !== l) : [...c.labels, l]; renderSheet(); return; }
   const tick = t.closest('[data-tick]');
@@ -1805,6 +1854,7 @@ sheetEl.addEventListener('input', e => {
   const c = cardOf(state.open); if (!c) return;
   const t = e.target;
   if (t.id === 'f-title') c.title = t.value.replace(/\n/g, ' ') || 'Senza titolo';
+  if (t.dataset.labname) { const l = state.labels.find(x => x.id === t.dataset.labname); if (l) l.name = t.value; }
   if (t.id === 'f-notes' || t.id === 'f-msg' || t.id === 'f-msgedit') {
     ui[draftKey(t.id)] = t.innerHTML;
     /* Scorciatoie come su Trello: "- " o "* " a inizio riga fa un elenco puntato, "1. " un elenco numerato */
@@ -2092,7 +2142,7 @@ $('.back').addEventListener('click', showHome);
 /* Tema: vale per questo dispositivo */
 const skinBtn = $('#skin-btn'), skinMenu = $('#skin-menu');
 function syncSkinMenu() {
-  const cur = document.documentElement.dataset.skin || 'sistema';
+  const cur = document.documentElement.dataset.skin || 'carta';
   skinMenu.querySelectorAll('[data-skin-choice]').forEach(b => {
     const on = b.dataset.skinChoice === cur;
     b.setAttribute('aria-checked', String(on));
