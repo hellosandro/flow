@@ -130,14 +130,14 @@ Azioni sulle schede:
 
 ## 6. Modello dati
 
+```
 boards          id, titolo, colore (0–5, opzionale), posizione, created_at
-boards          id, titolo, posizione, created_at
 columns         id, board_id, titolo, tipo ('in_corso' | 'in_revisione' | 'fatto' | 'variabile'), posizione
 labels          id, board_id, nome, colore
-cards           id, column_id, board_id, titolo, descrizione, scadenza (date), moduli_visibili (elenco), posizione, created_at, updated_at
+cards           id, column_id, board_id, titolo, descrizione, colore (0–5, opzionale), scadenza (date), moduli_visibili (elenco), posizione, created_at, updated_at
 card_labels     card_id, label_id
 card_members    card_id, membro
-messages        id, card_id, autore, testo, created_at
+messages        id, card_id, autore, testo, modificato, created_at
 checklist_items id, card_id, testo, completato, posizione
 links           id, card_id, url, titolo, posizione
 ```
