@@ -27,7 +27,8 @@ const OLD_ME = 'p-io';
 const owner = (who: string) => (who === OLD_ME ? admins()[0] || who : who);
 
 export type Person = { email: string; name: string; picture: string };
-export type UiSpace = { id: string; name: string; people: Person[]; members: string[] };
+export type Role = 'proprietario' | 'membro';
+export type UiSpace = { id: string; name: string; role: Role; people: Person[]; members: { email: string; role: Role }[] };
 
 const str = (v: unknown, max = 200_000) => (typeof v === 'string' ? v : '').slice(0, max);
 const arr = <T>(v: unknown): T[] => (Array.isArray(v) ? v : []);
@@ -42,11 +43,15 @@ const safeUrl = (v: unknown) => {
 const isEmail = (v: unknown): v is string => typeof v === 'string' && /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/.test(v);
 const isDay = (v: unknown) => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v);
 
-/* Chi può entrare: gli amministratori e chi è stato invitato in almeno uno spazio */
+/* Chi può entrare: l'amministratore, chi ha un invito a Flow e chi è stato invitato in uno spazio */
 export async function canEnter(email: string) {
   if (isAdmin(email)) return true;
-  const r = await getDb().select().from(t.spaceMembers).where(eq(t.spaceMembers.email, email)).limit(1);
-  return r.length > 0;
+  const db = getDb();
+  const [m, i] = await Promise.all([
+    db.select().from(t.spaceMembers).where(eq(t.spaceMembers.email, email)).limit(1),
+    db.select().from(t.inviti).where(eq(t.inviti.email, email)).limit(1)
+  ]);
+  return m.length > 0 || i.length > 0;
 }
 
 export async function rememberUser(u: SessionUser) {
@@ -54,25 +59,54 @@ export async function rememberUser(u: SessionUser) {
     .onConflictDoUpdate({ target: t.users.email, set: { nome: u.name, foto: u.picture, ultimoAccesso: new Date() } });
 }
 
-/* Gli spazi che l'utente vede, ognuno con le sue persone: gli amministratori ci sono sempre */
+/* Al primo ingresso ognuno trova il suo studio, di cui è proprietario.
+   Gli spazi senza proprietario (quelli nati prima dei ruoli) passano all'amministratore. */
+export async function ensureHome(user: SessionUser) {
+  const db = getDb();
+  if (isAdmin(user.email)) {
+    const [all, owners] = await Promise.all([
+      db.select({ id: t.spaces.id }).from(t.spaces),
+      db.select({ spaceId: t.spaceMembers.spaceId }).from(t.spaceMembers).where(eq(t.spaceMembers.ruolo, 'proprietario'))
+    ]);
+    const orphans = all.filter(sp => !owners.some(o => o.spaceId === sp.id));
+    if (orphans.length) await db.insert(t.spaceMembers).values(orphans.map(sp => ({ spaceId: sp.id, email: user.email, ruolo: 'proprietario' })))
+      .onConflictDoUpdate({ target: [t.spaceMembers.spaceId, t.spaceMembers.email], set: { ruolo: 'proprietario' } });
+  }
+  const mine = await db.select().from(t.spaceMembers).where(eq(t.spaceMembers.email, user.email)).limit(1);
+  if (mine.length) return;
+  const sid = 's' + crypto.randomUUID().replace(/-/g, '').slice(0, 16);
+  const first = user.name.trim().split(/\s+/)[0] || user.email.split('@')[0];
+  await db.transaction(async tx => {
+    await tx.insert(t.spaces).values({ id: sid, nome: `Studio di ${first}` });
+    await tx.insert(t.spaceMembers).values({ spaceId: sid, email: user.email, ruolo: 'proprietario' });
+  });
+}
+
+/* Gli spazi di cui l'utente fa parte, ognuno con le sue persone */
 export async function spacesFor(user: SessionUser): Promise<UiSpace[]> {
   const db = getDb();
-  const [all, members, us] = await Promise.all([
-    db.select().from(t.spaces).orderBy(asc(t.spaces.createdAt)),
-    db.select().from(t.spaceMembers).orderBy(asc(t.spaceMembers.createdAt)),
-    db.select().from(t.users)
+  const mine = await db.select().from(t.spaceMembers).where(eq(t.spaceMembers.email, user.email));
+  if (!mine.length) return [];
+  const ids = mine.map(m => m.spaceId);
+  const [sps, members] = await Promise.all([
+    db.select().from(t.spaces).where(inArray(t.spaces.id, ids)).orderBy(asc(t.spaces.createdAt)),
+    db.select().from(t.spaceMembers).where(inArray(t.spaceMembers.spaceId, ids)).orderBy(asc(t.spaceMembers.createdAt))
   ]);
-  const admin = isAdmin(user.email);
-  const visible = all.filter(sp => admin || members.some(m => m.spaceId === sp.id && m.email === user.email));
+  const emails = [...new Set(members.map(m => m.email))];
+  const us = await db.select().from(t.users).where(inArray(t.users.email, emails));
   const person = (email: string): Person => {
     const u = us.find(x => x.email === email);
     return { email, name: u?.nome || email.split('@')[0], picture: u?.foto || '' };
   };
-  return visible.map(sp => ({
-    id: sp.id, name: sp.nome,
-    members: members.filter(m => m.spaceId === sp.id).map(m => m.email),
-    people: [...new Set([...admins(), ...members.filter(m => m.spaceId === sp.id).map(m => m.email)])].map(person)
-  }));
+  const roleOf = (r: string): Role => (r === 'proprietario' ? 'proprietario' : 'membro');
+  return sps.map(sp => {
+    const ms = members.filter(m => m.spaceId === sp.id);
+    return {
+      id: sp.id, name: sp.nome, role: roleOf(mine.find(m => m.spaceId === sp.id)!.ruolo),
+      members: ms.map(m => ({ email: m.email, role: roleOf(m.ruolo) })),
+      people: ms.map(m => person(m.email))
+    };
+  });
 }
 
 export async function loadAll(user: SessionUser, onlyBoard?: string) {
@@ -216,31 +250,70 @@ export async function deleteBoard(user: SessionUser, id: string) {
   return true;
 }
 
-/* Gestione degli spazi: solo per gli amministratori */
-const cleanEmails = (v: unknown) => [...new Set(arr<string>(v).map(e => str(e, 200).trim().toLowerCase()).filter(isEmail))];
+/* Gestione degli spazi: chiunque può crearne uno (ne diventa proprietario);
+   nome, inviti e ruoli li cambia solo un proprietario */
+const cleanEmail = (v: unknown) => { const e = str(v, 200).trim().toLowerCase(); return isEmail(e) ? e : ''; };
 
-export async function createSpace(id: string, name: string) {
+export async function createSpace(user: SessionUser, id: string, name: string) {
   if (!isId(id)) throw new Error('id non valido');
-  await getDb().insert(t.spaces).values({ id: str(id, 100), nome: str(name, 200).trim() || 'Nuovo spazio' });
-}
-
-export async function updateSpace(id: string, input: { name?: unknown; members?: unknown }) {
-  const db = getDb();
-  await db.transaction(async tx => {
-    if (typeof input.name === 'string') await tx.update(t.spaces).set({ nome: str(input.name, 200).trim() || 'Senza nome' }).where(eq(t.spaces.id, id));
-    if (Array.isArray(input.members)) {
-      const emails = cleanEmails(input.members);
-      await tx.delete(t.spaceMembers).where(eq(t.spaceMembers.spaceId, id));
-      if (emails.length) await tx.insert(t.spaceMembers).values(emails.map(email => ({ spaceId: id, email })));
-    }
+  await getDb().transaction(async tx => {
+    await tx.insert(t.spaces).values({ id, nome: str(name, 200).trim() || 'Nuovo spazio' });
+    await tx.insert(t.spaceMembers).values({ spaceId: id, email: user.email, ruolo: 'proprietario' });
   });
 }
 
-/* Si elimina solo uno spazio vuoto, così nessuna bacheca sparisce per sbaglio */
-export async function deleteSpace(id: string) {
+export async function roleIn(user: SessionUser, spaceId: string) {
+  const [m] = await getDb().select().from(t.spaceMembers).where(and(eq(t.spaceMembers.spaceId, spaceId), eq(t.spaceMembers.email, user.email)));
+  return m ? m.ruolo : null;
+}
+
+/* Una sola operazione per richiesta: rinominare, invitare, rimuovere (o uscire), nominare o togliere un proprietario.
+   Uno spazio non resta mai senza proprietario. */
+export async function updateSpace(user: SessionUser, id: string, input: { name?: unknown; invite?: unknown; remove?: unknown; promote?: unknown; demote?: unknown }) {
   const db = getDb();
+  const role = await roleIn(user, id);
+  const leaving = cleanEmail(input.remove) === user.email;
+  if (role !== 'proprietario' && !(role && leaving)) return 'Solo il proprietario può gestire questo spazio.';
+  if (typeof input.name === 'string') {
+    await db.update(t.spaces).set({ nome: str(input.name, 200).trim() || 'Senza nome' }).where(eq(t.spaces.id, id));
+  } else if (input.invite !== undefined) {
+    const email = cleanEmail(input.invite);
+    if (!email) return 'Email non valida.';
+    await db.insert(t.spaceMembers).values({ spaceId: id, email }).onConflictDoNothing();
+  } else if (input.remove !== undefined || input.promote !== undefined || input.demote !== undefined) {
+    const email = cleanEmail(input.remove ?? input.promote ?? input.demote);
+    const ms = await db.select().from(t.spaceMembers).where(eq(t.spaceMembers.spaceId, id));
+    const target = ms.find(m => m.email === email);
+    if (!target) return 'Questa persona non è nello spazio.';
+    const where = and(eq(t.spaceMembers.spaceId, id), eq(t.spaceMembers.email, email));
+    if (input.promote !== undefined) { await db.update(t.spaceMembers).set({ ruolo: 'proprietario' }).where(where); return null; }
+    if (target.ruolo === 'proprietario' && ms.filter(m => m.ruolo === 'proprietario').length === 1) return 'Prima nomina un altro proprietario.';
+    if (input.demote !== undefined) { await db.update(t.spaceMembers).set({ ruolo: 'membro' }).where(where); return null; }
+    await db.delete(t.spaceMembers).where(and(eq(t.spaceMembers.spaceId, id), eq(t.spaceMembers.email, email)));
+  }
+  return null;
+}
+
+/* Si elimina solo uno spazio vuoto, così nessuna bacheca sparisce per sbaglio */
+export async function deleteSpace(user: SessionUser, id: string) {
+  const db = getDb();
+  if ((await roleIn(user, id)) !== 'proprietario') return 'Solo il proprietario può eliminare questo spazio.';
   const used = await db.select({ id: t.boards.id }).from(t.boards).where(eq(t.boards.spaceId, id)).limit(1);
-  if (used.length) return false;
+  if (used.length) return 'Lo spazio contiene ancora delle bacheche.';
   await db.delete(t.spaces).where(eq(t.spaces.id, id));
+  return null;
+}
+
+/* Inviti a Flow: solo l'amministratore li gestisce */
+export async function listInvites() {
+  return (await getDb().select().from(t.inviti).orderBy(asc(t.inviti.createdAt))).map(i => i.email);
+}
+export async function addInvite(v: unknown) {
+  const email = cleanEmail(v);
+  if (!email) return false;
+  await getDb().insert(t.inviti).values({ email }).onConflictDoNothing();
   return true;
+}
+export async function removeInvite(v: unknown) {
+  await getDb().delete(t.inviti).where(eq(t.inviti.email, cleanEmail(v)));
 }

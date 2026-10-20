@@ -10,12 +10,20 @@ export const spaces = pgTable('spaces', {
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
 });
 
-/* Persone invitate in uno spazio, per email (l'account Google con cui entrano) */
+/* Persone di uno spazio, per email (l'account Google con cui entrano).
+   Il proprietario gestisce lo spazio: nome, inviti, ruoli. */
 export const spaceMembers = pgTable('space_members', {
   spaceId: text('space_id').notNull().references(() => spaces.id, { onDelete: 'cascade' }),
   email: text('email').notNull(),
+  ruolo: text('ruolo').notNull().default('membro'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
 }, t => [primaryKey({ columns: [t.spaceId, t.email] })]);
+
+/* Inviti a Flow: chi è in questo elenco può entrare e aprire il suo studio */
+export const inviti = pgTable('inviti', {
+  email: text('email').primaryKey(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
+});
 
 /* Nome e foto di chi è entrato almeno una volta, per firmare messaggi e membri */
 export const users = pgTable('users', {

@@ -15,9 +15,10 @@ FLOW è un tool online in stile Trello, personale e con meno funzioni. Serve a g
 
 ## 2. Accesso (beta)
 
-- Si entra con **"Accedi con Google"**. Entra solo chi è **amministratore** (email in `FLOW_ADMIN` su Vercel, separate da virgole) o è stato **invitato** in almeno uno spazio.
-- **Spazi**: ogni bacheca appartiene a uno spazio (all'inizio uno solo, "Il mio spazio"). Chi è invitato in uno spazio ne vede e modifica tutte le bacheche, e nient'altro. Gli amministratori vedono tutti gli spazi, ne creano di nuovi e invitano o rimuovono le persone per email (menu **Spazi** in alto nella pagina iniziale → *Gestisci questo spazio* / *Nuovo spazio*). Uno spazio si può eliminare solo quando è vuoto.
-- Le persone di uno spazio (invitati + amministratori) sono quelle proposte nel modulo *Membri*; i messaggi sono firmati con il nome dell'account Google, e ognuno può modificare o eliminare solo i propri.
+- Si entra con **"Accedi con Google"**, **su invito**. Può entrare: l'**amministratore** di Flow (email in `FLOW_ADMIN` su Vercel), chi è nell'elenco **Inviti a Flow** (lo gestisce l'amministratore dal menu Spazi) e chi è stato invitato in uno spazio.
+- **Spazi** (come gli spazi di lavoro di Trello): ogni bacheca appartiene a uno spazio. Al primo ingresso ognuno trova il suo **studio** ("Studio di …"), di cui è **proprietario**. Il proprietario rinomina lo spazio, invita e rimuove persone per email, nomina altri proprietari, elimina lo spazio quando è vuoto. I **membri** usano le bacheche e possono uscire dallo spazio. Chiunque può creare altri spazi.
+- Ognuno vede **solo gli spazi di cui fa parte**: l'amministratore non vede gli studi degli altri (i dati però stanno nel suo database). Gli spazi nati prima dei ruoli passano all'amministratore come proprietario.
+- Le persone di uno spazio sono quelle proposte nel modulo *Membri*; i messaggi sono firmati con il nome dell'account Google, e ognuno può modificare o eliminare solo i propri.
 - Dopo il login, un cookie di sessione sicuro (httpOnly, firmato con `AUTH_SECRET`) mantiene l'accesso per 30 giorni su quel dispositivo.
 - Senza login, tutte le pagine e le API rispondono con la schermata di accesso.
 - **Lavorare in due sulla stessa bacheca**: ogni bacheca ha un numero di versione. Se due persone salvano insieme, la seconda riceve la versione dell'altra, il browser unisce le modifiche scheda per scheda (i messaggi si sommano), salva di nuovo e lo segnala con un avviso. Ogni 20 secondi, e tornando sulla pagina, si vedono le modifiche degli altri.
@@ -133,7 +134,8 @@ Azioni sulle schede:
 
 ```
 spaces          id, nome, created_at
-space_members   space_id, email, created_at
+space_members   space_id, email, ruolo ('proprietario' | 'membro'), created_at
+inviti          email, created_at
 users           email, nome, foto, ultimo_accesso
 boards          id, space_id, titolo, colore (0–5, opzionale), versione, modificato_da, posizione, created_at
 columns         id, board_id, titolo, tipo ('in_corso' | 'in_revisione' | 'fatto' | 'variabile'), posizione
@@ -170,7 +172,7 @@ links           id, card_id, url, titolo, posizione
 - `scripts/build-ui.mjs` le avvolge in un documento completo e le scrive in `lib/ui-html.ts` (generato, non va modificato né salvato su Git); le route `app/route.ts` (`/`) e `app/login/route.ts` le restituiscono.
 - `middleware.ts` + `lib/auth.ts`: senza il cookie di sessione (`flow_session`: email, nome e foto firmati con `AUTH_SECRET`, 30 giorni) le pagine portano a `/login` e le API rispondono 401. Cambiando `AUTH_SECRET`, tutti devono rientrare.
 - Login: `GET /api/auth/google` porta a Google, che rimanda a `/api/auth/callback/google` (va indicato tra gli URI di reindirizzamento del client OAuth). Variabili su Vercel: `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`, `AUTH_SECRET`, `FLOW_ADMIN`.
-- API: `GET /api/state` (utente, spazi visibili e loro bacheche), `PUT /api/boards/:id` (salva una bacheca intera in una transazione; con una versione vecchia risponde 409 e restituisce quella attuale), `DELETE /api/boards/:id`, `POST /api/spaces`, `PATCH`/`DELETE /api/spaces/:id` (solo amministratori), `POST /api/logout`. Ogni API controlla che l'utente abbia accesso allo spazio.
+- API: `GET /api/state` (utente, spazi visibili e loro bacheche), `PUT /api/boards/:id` (salva una bacheca intera in una transazione; con una versione vecchia risponde 409 e restituisce quella attuale), `DELETE /api/boards/:id`, `POST /api/spaces` (chiunque), `PATCH`/`DELETE /api/spaces/:id` (solo i proprietari; un membro può solo uscire), `GET`/`POST`/`DELETE /api/invites` (solo amministratore), `POST /api/logout`. Ogni API controlla che l'utente abbia accesso allo spazio.
 - `lib/sanitize.ts` pulisce l'HTML di descrizioni e messaggi; `lib/store.ts` controlla anche identificativi, colori delle etichette e indirizzi dei link, perché l'interfaccia li inserisce nella pagina.
 - `lib/schema.ts` (Drizzle) segue la sezione 6; le migrazioni stanno in `drizzle/` (`npm run db:generate` dopo una modifica allo schema) e vengono applicate da `scripts/migrate.mjs` a ogni pubblicazione su Vercel.
 - Il database si legge da `DATABASE_URL` (o `POSTGRES_URL`), aggiunta da Vercel con l'integrazione Neon.
@@ -178,7 +180,8 @@ links           id, card_id, url, titolo, posizione
 
 ## 9. Dopo la beta: condivisione con i clienti
 
-Il login con Google e gli spazi (sezione 2) coprono già il caso di un piccolo team esterno. Restano possibili in seguito:
+Il login con Google, gli studi su invito e gli spazi (sezione 2) coprono già il caso di altri studi che usano FLOW. Restano possibili in seguito:
+- iscrizione aperta a tutti (oggi serve un invito);
 - inviti per singola bacheca invece che per spazio;
 - accesso via email con link magico, per chi non ha un account Google;
 - ruoli diversi (ad esempio chi può solo leggere).

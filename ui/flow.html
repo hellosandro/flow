@@ -512,7 +512,10 @@ body.grabbing, body.grabbing * { cursor: grabbing !important; }
 #space-menu .vt small { margin-left: 0; padding-left: 0; }
 .sp-list { list-style: none; margin: 0; padding: 0; }
 .sp-list li { display: flex; align-items: center; gap: 8px; padding: 9px 0; border-bottom: .5px solid var(--sep); font: var(--t-sub); }
-.sp-list li span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.sp-list li span { flex: 1; min-width: 0; overflow-wrap: anywhere; display: grid; }
+.sp-list li span small { font: var(--t-cap); color: var(--label-2); }
+.sp-list li button.ok { color: var(--blue); }
+.alert-actions.one { grid-template-columns: 1fr; }
 .sp-list li.none { color: var(--label-2); }
 .alert-actions button:disabled { color: var(--label-3); cursor: default; background: none; }
 .sp-list button { font: var(--t-sub); color: var(--red); }
@@ -1876,7 +1879,7 @@ sheetEl.addEventListener('keydown', e => {
 });
 
 /* Pagina iniziale: l'elenco delle bacheche */
-const homeEl = $('#home'), appEl = $('#app'), homeUi = { menu: null, confirm: null };
+const homeEl = $('#home'), appEl = $('#app'), homeUi = { menu: null, confirm: null, manage: false, invites: false };
 function urgentOf(b) {
   let late = 0, soon = 0;
   for (const c of b.cards) {
@@ -1919,6 +1922,7 @@ function renderHome() {
     </article>`;
   }).join('') + (sp ? `<button type="button" class="tile tile-new" data-newboard>${ICON.plus}Nuova bacheca</button>` : '');
   const b = boards.find(x => x.id === homeUi.confirm);
+  if (homeUi.invites) { renderInvites(); return; }
   if (homeUi.manage && sp) { renderSpaceSheet(sp); return; }
   $('#home-alert').innerHTML = b ? `<div class="alert-wrap fixed"><div class="alert" role="alertdialog" aria-modal="true" aria-labelledby="ha-t" aria-describedby="ha-d">
       <h3 id="ha-t">Eliminare “${esc(b.title)}”?</h3>
@@ -1927,29 +1931,66 @@ function renderHome() {
     </div></div>` : '';
   if (b) $('[data-homecancel]').focus();
 }
-/* Spazi: ognuno ha le sue bacheche e le sue persone. Chi amministra Flow li crea e invita
-   le persone per email; gli altri vedono solo gli spazi in cui sono stati invitati. */
+/* Spazi: ognuno ha le sue bacheche e le sue persone. Chiunque può crearne uno e ne diventa
+   proprietario: lo rinomina, invita e rimuove le persone. Gli altri lo usano e possono uscirne.
+   L'amministratore di Flow decide chi può entrare per la prima volta (Inviti a Flow). */
 function renderSpaceMenu() {
-  $('#space-wrap').hidden = mode === 'local' || (spaces.length < 2 && !ME.admin);
+  const sp = spaceOf(space);
+  $('#space-wrap').hidden = mode === 'local';
   $('#space-menu').innerHTML = `<p class="menu-head">Spazi</p>
     ${spaces.map(x => `<button type="button" class="mi" role="menuitemradio" aria-checked="${x.id === space}" data-space="${x.id}"><span class="mk">${x.id === space ? ICON.tick : ''}</span><span class="vt"><b>${esc(x.name)}</b><small>${plural(x.people.length, '1 persona', 'persone')}</small></span></button>`).join('')}
-    ${ME.admin ? `<div class="menu-sep"></div>
-      ${spaceOf(space) ? `<button type="button" class="mi" data-spacemanage>Gestisci questo spazio</button>` : ''}
-      <button type="button" class="mi" data-spacenew>Nuovo spazio</button>` : ''}`;
+    <div class="menu-sep"></div>
+    ${sp ? `<button type="button" class="mi" data-spacemanage>${sp.role === 'proprietario' ? 'Gestisci questo spazio' : 'Persone dello spazio'}</button>` : ''}
+    <button type="button" class="mi" data-spacenew>Nuovo spazio</button>
+    ${ME.admin ? `<button type="button" class="mi" data-invites>Inviti a Flow</button>` : ''}`;
 }
 function renderSpaceSheet(sp) {
-  const used = boards.some(b => b.space === sp.id);
+  const owner = sp.role === 'proprietario', used = boards.some(b => b.space === sp.id);
+  const owners = sp.members.filter(m => m.role === 'proprietario').length;
+  const nameOf = e => sp.people.find(p => p.email === e)?.name || e;
+  const row = m => {
+    const me = m.email === ME.email, acts = [];
+    if (me) { if (owner && owners > 1) acts.push(`<button type="button" data-spaceremove="${esc(m.email)}">Esci</button>`); }
+    else if (owner) {
+      if (m.role !== 'proprietario') acts.push(`<button type="button" class="ok" data-spacepromote="${esc(m.email)}">Rendi proprietario</button>`);
+      acts.push(`<button type="button" data-spaceremove="${esc(m.email)}">Rimuovi</button>`);
+    }
+    return `<li><span><b>${esc(me ? ME.name : nameOf(m.email))}</b><small>${m.role === 'proprietario' ? 'Proprietario' : 'Membro'} · ${esc(m.email)}</small></span>${acts.join('')}</li>`;
+  };
   $('#home-alert').innerHTML = `<div class="alert-wrap fixed"><div class="alert space" role="dialog" aria-modal="true" aria-labelledby="sp-t">
-    <h3 id="sp-t">Spazio</h3>
+    <h3 id="sp-t">${owner ? 'Spazio' : esc(sp.name)}</h3>
     <div class="sp-body">
-      <input id="sp-name" class="sp-input" value="${esc(sp.name)}" aria-label="Nome dello spazio" enterkeyhint="done">
-      <p class="sp-label">Persone invitate</p>
-      <ul class="sp-list">${sp.members.map(e => `<li><span>${esc(e)}</span><button type="button" data-spaceremove="${esc(e)}">Rimuovi</button></li>`).join('') || '<li class="none">Nessuno, per ora.</li>'}</ul>
-      <form class="sp-add" id="sp-add"><input id="sp-email" class="sp-input" type="email" placeholder="email dell'account Google" aria-label="Email da invitare" autocomplete="off" enterkeyhint="send"><button type="submit">Invita</button></form>
-      <p class="sp-note">Le persone invitate entrano da flow-s3.vercel.app con “Accedi con Google” e vedono solo le bacheche di questo spazio. Gli amministratori sono presenti in tutti gli spazi.</p>
+      ${owner ? `<input id="sp-name" class="sp-input" value="${esc(sp.name)}" aria-label="Nome dello spazio" enterkeyhint="done">` : ''}
+      <p class="sp-label">Persone</p>
+      <ul class="sp-list">${sp.members.map(row).join('')}</ul>
+      ${owner ? `<form class="sp-add" id="sp-add"><input id="sp-email" class="sp-input" type="email" placeholder="email dell'account Google" aria-label="Email da invitare" autocomplete="off" enterkeyhint="send"><button type="submit">Invita</button></form>
+      <p class="sp-note">Le persone invitate entrano da flow-s3.vercel.app con “Accedi con Google” e vedono le bacheche di questo spazio.</p>` : ''}
     </div>
-    <div class="alert-actions"><button type="button" class="danger" data-spacedelete ${used ? 'disabled title="Prima sposta o elimina le sue bacheche"' : ''}>Elimina spazio</button><button type="button" class="strong" data-spaceclose>Fine</button></div>
+    <div class="alert-actions">${owner
+      ? `<button type="button" class="danger" data-spacedelete ${used ? 'disabled title="Prima elimina le sue bacheche"' : ''}>Elimina spazio</button>`
+      : `<button type="button" class="danger" data-spaceremove="${esc(ME.email)}">Esci dallo spazio</button>`}<button type="button" class="strong" data-spaceclose>Fine</button></div>
   </div></div>`;
+}
+let invites = [];
+function renderInvites() {
+  $('#home-alert').innerHTML = `<div class="alert-wrap fixed"><div class="alert space" role="dialog" aria-modal="true" aria-labelledby="inv-t">
+    <h3 id="inv-t">Inviti a Flow</h3>
+    <div class="sp-body">
+      <p class="sp-note">Chi è in questo elenco può entrare con “Accedi con Google” e trova un suo studio, di cui è proprietario: lo usa e invita i suoi colleghi senza passare da te. Tu non vedi i suoi spazi.</p>
+      <ul class="sp-list">${invites.map(e => `<li><span>${esc(e)}</span><button type="button" data-inviteremove="${esc(e)}">Rimuovi</button></li>`).join('') || '<li class="none">Nessun invito, per ora.</li>'}</ul>
+      <form class="sp-add" id="inv-add"><input id="inv-email" class="sp-input" type="email" placeholder="email dell'account Google" aria-label="Email da invitare" autocomplete="off" enterkeyhint="send"><button type="submit">Invita</button></form>
+    </div>
+    <div class="alert-actions one"><button type="button" class="strong" data-spaceclose>Fine</button></div>
+  </div></div>`;
+}
+async function inviteApi(method, body) {
+  try {
+    const r = await fetch('/api/invites', { method, headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) { toast(data.error || 'Operazione non riuscita.'); return false; }
+    invites = data.invites || [];
+    return true;
+  } catch { toast('Connessione assente. Riprova tra poco.'); return false; }
 }
 async function spaceApi(method, path, body) {
   try {
@@ -1958,9 +1999,14 @@ async function spaceApi(method, path, body) {
     if (!r.ok) { toast(data.error || 'Operazione non riuscita.'); return false; }
   } catch { toast('Connessione assente. Riprova tra poco.'); return false; }
   const data = await fetchState().catch(() => null);
-  if (data) { adoptSpaces(data); boards.forEach(b => { b.people = peopleOf(b.space); }); }
+  if (data) {
+    adoptSpaces(data);
+    if (!dirty.size && !removed.size && !saving) adopt(data.boards);
+    else boards.forEach(b => { b.people = peopleOf(b.space); });
+  }
   return true;
 }
+const closeSheetHome = () => { homeUi.manage = homeUi.invites = false; $('#home-alert').innerHTML = ''; renderHome(); };
 const spaceBtn = $('#space-btn'), spaceMenu = $('#space-menu');
 spaceBtn.addEventListener('click', () => { spaceMenu.hidden = !spaceMenu.hidden; spaceBtn.setAttribute('aria-expanded', String(!spaceMenu.hidden)); });
 document.addEventListener('click', e => { if (!e.target.closest('#space-wrap')) { spaceMenu.hidden = true; spaceBtn.setAttribute('aria-expanded', 'false'); } });
@@ -1969,6 +2015,7 @@ spaceMenu.addEventListener('click', async e => {
   spaceMenu.hidden = true; spaceBtn.setAttribute('aria-expanded', 'false');
   if (pick) { setSpace(pick.dataset.space); renderHome(); return; }
   if (t.closest('[data-spacemanage]')) { homeUi.manage = true; renderHome(); return; }
+  if (t.closest('[data-invites]')) { if (await inviteApi('GET')) { homeUi.invites = true; renderHome(); $('#inv-email')?.focus(); } return; }
   if (t.closest('[data-spacenew]')) {
     const sid = id();
     if (await spaceApi('POST', '', { id: sid, name: 'Nuovo spazio' })) { setSpace(sid); homeUi.manage = true; renderHome(); const n = $('#sp-name'); n?.focus(); n?.select(); }
@@ -1979,19 +2026,27 @@ $('#home-alert').addEventListener('change', e => {
 });
 $('#home-alert').addEventListener('submit', async e => {
   e.preventDefault();
-  const inp = $('#sp-email'), email = inp.value.trim().toLowerCase(), sp = spaceOf(space);
-  if (!sp || !inp.checkValidity() || !email) { inp.reportValidity(); return; }
-  if (await spaceApi('PATCH', '/' + encodeURIComponent(space), { members: [...sp.members, email] })) { renderHome(); $('#sp-email')?.focus(); }
+  const invite = e.target.id === 'inv-add', inp = invite ? $('#inv-email') : $('#sp-email');
+  const email = inp.value.trim().toLowerCase();
+  if (!inp.checkValidity() || !email) { inp.reportValidity(); return; }
+  const ok = invite ? await inviteApi('POST', { email }) : await spaceApi('PATCH', '/' + encodeURIComponent(space), { invite: email });
+  if (ok) { renderHome(); $(invite ? '#inv-email' : '#sp-email')?.focus(); }
 });
 $('#home-alert').addEventListener('click', async e => {
-  const t = e.target, sp = spaceOf(space);
-  if (!sp) return;
+  const t = e.target;
+  if (t.closest('[data-spaceclose]') || t.classList.contains('alert-wrap')) { closeSheetHome(); return; }
+  const inv = t.closest('[data-inviteremove]');
+  if (inv) { if (await inviteApi('DELETE', { email: inv.dataset.inviteremove })) renderHome(); return; }
+  const path = '/' + encodeURIComponent(space);
   const rm = t.closest('[data-spaceremove]');
-  if (rm) { if (await spaceApi('PATCH', '/' + encodeURIComponent(space), { members: sp.members.filter(x => x !== rm.dataset.spaceremove) })) renderHome(); return; }
-  if (t.closest('[data-spaceclose]') || t.classList.contains('alert-wrap')) { homeUi.manage = false; $('#home-alert').innerHTML = ''; renderHome(); return; }
-  if (t.closest('[data-spacedelete]')) {
-    if (await spaceApi('DELETE', '/' + encodeURIComponent(space))) { homeUi.manage = false; $('#home-alert').innerHTML = ''; setSpace(spaces[0]?.id); renderHome(); }
+  if (rm) {
+    const leaving = rm.dataset.spaceremove === ME.email;
+    if (await spaceApi('PATCH', path, { remove: rm.dataset.spaceremove })) { if (leaving) closeSheetHome(); else renderHome(); }
+    return;
   }
+  const pr = t.closest('[data-spacepromote]');
+  if (pr) { if (await spaceApi('PATCH', path, { promote: pr.dataset.spacepromote })) renderHome(); return; }
+  if (t.closest('[data-spacedelete]')) { if (await spaceApi('DELETE', path)) { setSpace(spaces[0]?.id); closeSheetHome(); } }
 });
 
 function showHome() {
@@ -2028,7 +2083,7 @@ homeEl.addEventListener('click', e => {
   if (open && !t.closest('.tile-more')) openBoard(boards.find(b => b.id === open.dataset.openboard));
 });
 homeEl.addEventListener('keydown', e => {
-  if (e.key === 'Escape' && (homeUi.confirm || homeUi.menu || homeUi.manage)) { homeUi.confirm = homeUi.menu = null; homeUi.manage = false; $('#home-alert').innerHTML = ''; renderHome(); return; }
+  if (e.key === 'Escape' && (homeUi.confirm || homeUi.menu || homeUi.manage || homeUi.invites)) { homeUi.confirm = homeUi.menu = null; closeSheetHome(); return; }
   const tile = e.target.closest('[data-openboard]');
   if (tile && e.target === tile && e.key === 'Enter') openBoard(boards.find(b => b.id === tile.dataset.openboard));
 });
