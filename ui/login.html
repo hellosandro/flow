@@ -1,4 +1,6 @@
 <title>FLOW · Accesso</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geologica:wght@300;400;500;600&display=swap">
+<script>try { document.documentElement.dataset.skin = localStorage.getItem('flow-skin') || 'sistema'; } catch {}</script>
 <style>
 :root {
   --bg: #F2F2F7; --surface: #FFFFFF; --label: #1D1D1F; --label-2: rgba(60,60,67,.62); --label-3: rgba(60,60,67,.32);
@@ -12,32 +14,33 @@
 html, body { height: 100%; }
 body { background: var(--bg); color: var(--label); font: 400 15px/1.4 var(--font); -webkit-font-smoothing: antialiased; display: grid; place-items: center; padding: 0 max(16px, env(safe-area-inset-left, 0px)) 0 max(16px, env(safe-area-inset-right, 0px)); box-sizing: border-box; }
 * { box-sizing: border-box; }
-form { width: min(340px, 100%); display: grid; gap: 14px; margin-bottom: 12vh; }
+.box { width: min(340px, 100%); display: grid; gap: 14px; margin-bottom: 12vh; }
 .brand { font: 700 12px/1 var(--font); letter-spacing: .16em; color: var(--label-2); margin: 0; }
 h1 { font: 700 30px/1.15 var(--font); letter-spacing: -.022em; margin: 0 0 6px; }
-input { width: 100%; font: 400 17px/1.3 var(--font); color: var(--label); background: var(--surface); border: .5px solid var(--sep); border-radius: 12px; padding: 13px 14px; }
-input:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px color-mix(in srgb, var(--blue) 20%, transparent); }
-button { font: 600 17px/1 var(--font); color: #fff; background: var(--blue); border: 0; border-radius: 12px; padding: 14px; cursor: pointer; }
-button:disabled { opacity: .6; cursor: default; }
+.google { display: flex; align-items: center; justify-content: center; gap: 10px; font: 600 17px/1 var(--font); color: var(--label); background: var(--surface); border: .5px solid var(--sep); border-radius: 12px; padding: 14px; text-decoration: none; box-shadow: 0 1px 2px rgba(0,0,0,.06); }
+.google:hover { background: color-mix(in srgb, var(--surface) 92%, var(--label)); }
+.google svg { width: 18px; height: 18px; flex: none; }
+.note { color: var(--label-2); font-size: 13px; margin: 0; }
+/* tema Carta: bianco e nero, Geologica, maiuscolo spaziato */
+[data-skin="carta"] { --bg: #fff; --surface: #fff; --label: #111; --sep: #111; --font: "Geologica", system-ui, sans-serif; }
+[data-skin="carta"] body { text-align: center; }
+[data-skin="carta"] h1 { font: 600 20px/1.2 var(--font); text-transform: uppercase; letter-spacing: .2em; margin-bottom: 18px; }
+[data-skin="carta"] .brand { color: var(--label); }
+[data-skin="carta"] .google { border: 1px solid var(--sep); border-radius: 0; box-shadow: none; font: 500 12px/1 var(--font); text-transform: uppercase; letter-spacing: .18em; padding: 16px; }
 .err { color: var(--red); font-size: 14px; margin: 0; min-height: 1.4em; }
 </style>
-<form id="f">
+<main class="box">
   <p class="brand">FLOW</p>
   <h1>Bentornato</h1>
-  <input id="pw" type="password" autocomplete="current-password" placeholder="Password" aria-label="Password" required autofocus>
-  <button id="go" type="submit">Entra</button>
+  <a class="google" href="/api/auth/google"><svg viewBox="0 0 18 18" aria-hidden="true"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92a8.78 8.78 0 0 0 2.68-6.62z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.8.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.96v2.33A9 9 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.97 10.72a5.4 5.4 0 0 1 0-3.44V4.95H.96a9 9 0 0 0 0 8.1l3.01-2.33z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58A9 9 0 0 0 .96 4.95l3.01 2.33C4.68 5.16 6.66 3.58 9 3.58z"/></svg>Accedi con Google</a>
   <p class="err" id="err" role="alert"></p>
-</form>
+  <p class="note">Entra chi è stato invitato in uno spazio di Flow.</p>
+</main>
 <script>
-const f = document.getElementById('f'), go = document.getElementById('go'), err = document.getElementById('err');
-f.addEventListener('submit', async e => {
-  e.preventDefault();
-  go.disabled = true; err.textContent = '';
-  try {
-    const r = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: document.getElementById('pw').value }) });
-    if (r.ok) { location.href = '/'; return; }
-    err.textContent = (await r.json().catch(() => ({}))).error || 'Accesso non riuscito.';
-  } catch { err.textContent = 'Connessione assente. Riprova tra poco.'; }
-  go.disabled = false; document.getElementById('pw').select();
-});
+const msg = {
+  noaccess: 'Questo account Google non è stato invitato. Chiedi a chi gestisce Flow di aggiungere la tua email.',
+  retry: 'Accesso non riuscito. Riprova.',
+  config: 'Il login con Google non è ancora configurato su Vercel.'
+}[new URLSearchParams(location.search).get('e')];
+if (msg) document.getElementById('err').textContent = msg;
 </script>

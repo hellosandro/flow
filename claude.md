@@ -15,11 +15,12 @@ FLOW è un tool online in stile Trello, personale e con meno funzioni. Serve a g
 
 ## 2. Accesso (beta)
 
-- Un solo utente: il proprietario.
-- Accesso protetto da **una password**, salvata come variabile d'ambiente su Vercel (`FLOW_PASSWORD`).
-- Dopo il login, un cookie di sessione sicuro (httpOnly) mantiene l'accesso per 30 giorni su quel dispositivo.
-- Nessuna registrazione, nessuna email, nessun servizio di autenticazione esterno.
+- Si entra con **"Accedi con Google"**. Entra solo chi è **amministratore** (email in `FLOW_ADMIN` su Vercel, separate da virgole) o è stato **invitato** in almeno uno spazio.
+- **Spazi**: ogni bacheca appartiene a uno spazio (all'inizio uno solo, "Il mio spazio"). Chi è invitato in uno spazio ne vede e modifica tutte le bacheche, e nient'altro. Gli amministratori vedono tutti gli spazi, ne creano di nuovi e invitano o rimuovono le persone per email (menu **Spazi** in alto nella pagina iniziale → *Gestisci questo spazio* / *Nuovo spazio*). Uno spazio si può eliminare solo quando è vuoto.
+- Le persone di uno spazio (invitati + amministratori) sono quelle proposte nel modulo *Membri*; i messaggi sono firmati con il nome dell'account Google, e ognuno può modificare o eliminare solo i propri.
+- Dopo il login, un cookie di sessione sicuro (httpOnly, firmato con `AUTH_SECRET`) mantiene l'accesso per 30 giorni su quel dispositivo.
 - Senza login, tutte le pagine e le API rispondono con la schermata di accesso.
+- **Lavorare in due sulla stessa bacheca**: ogni bacheca ha un numero di versione. Se due persone salvano insieme, la seconda riceve la versione dell'altra, il browser unisce le modifiche scheda per scheda (i messaggi si sommano), salva di nuovo e lo segnala con un avviso. Ogni 20 secondi, e tornando sulla pagina, si vedono le modifiche degli altri.
 
 ## 3. Struttura
 
@@ -131,13 +132,16 @@ Azioni sulle schede:
 ## 6. Modello dati
 
 ```
-boards          id, titolo, colore (0–5, opzionale), posizione, created_at
+spaces          id, nome, created_at
+space_members   space_id, email, created_at
+users           email, nome, foto, ultimo_accesso
+boards          id, space_id, titolo, colore (0–5, opzionale), versione, modificato_da, posizione, created_at
 columns         id, board_id, titolo, tipo ('in_corso' | 'in_revisione' | 'fatto' | 'variabile'), posizione
 labels          id, board_id, nome, colore
 cards           id, column_id, board_id, titolo, descrizione, colore (0–5, opzionale), scadenza (date), moduli_visibili (elenco), posizione, created_at, updated_at
 card_labels     card_id, label_id
 card_members    card_id, membro
-messages        id, card_id, autore, testo, modificato, created_at
+messages        id, card_id, autore (email), testo, modificato, created_at
 checklist_items id, card_id, testo, completato, posizione
 links           id, card_id, url, titolo, posizione
 ```
@@ -145,39 +149,39 @@ links           id, card_id, url, titolo, posizione
 - La creazione di una bacheca crea anche le tre colonne fisse.
 - L'eliminazione è a cascata: eliminando una bacheca si eliminano le sue colonne, schede, checklist e link.
 - Per l'ordinamento, `posizione` usa numeri frazionari (o stringhe lexorank), così uno spostamento aggiorna una sola riga.
-- Il modello è pensato per aggiungere gli utenti in seguito (sezione 9) senza riscriverlo.
+- `card_members.membro` è l'email della persona. Prima del login con Google l'unico utente era `p-io`: i suoi messaggi e le sue assegnazioni vengono attribuiti al primo amministratore.
 
 ## 7. Fasi
 
 1. ✅ **Prototipo visivo** con dati di esempio, per definire tipografia e stile.
-2. ✅ **Progetto Next.js** con login a password e database Neon collegato.
+2. ✅ **Progetto Next.js** con database Neon collegato; login con Google e spazi condivisi.
 3. ✅ **Bacheche, colonne, schede** con le funzioni della sezione 3 (manca il riordino delle bacheche e delle colonne).
 4. ✅ **Pubblicazione** su Vercel: https://flow-s3.vercel.app (progetto `flow`, si aggiorna a ogni modifica del ramo `main`).
 5. **Dominio personale** (facoltativo).
 
 ## 8. Note per chi sviluppa
 
-- Il proprietario **non è uno sviluppatore**. I passaggi che deve fare lui vanno spiegati in modo semplice, passo per passo: creazione del progetto su Vercel, collegamento di Neon, impostazione di `FLOW_PASSWORD`, dominio.
+- Il proprietario **non è uno sviluppatore**. I passaggi che deve fare lui vanno spiegati in modo semplice, passo per passo: creazione del progetto su Vercel, collegamento di Neon, variabili d'ambiente, Google Cloud Console, dominio.
 - Orari e date sempre nel fuso orario italiano (CET/CEST).
 - Salvataggi immediati e ottimistici: l'interfaccia si aggiorna subito e salva in background. Se il salvataggio non riesce, lo segnala (avviso rosso in basso) e riprova.
 
 ### Com'è fatto il codice
 - `ui/flow.html`: tutta l'interfaccia (HTML, CSS e JavaScript senza librerie). `ui/login.html`: la schermata di accesso.
 - `scripts/build-ui.mjs` le avvolge in un documento completo e le scrive in `lib/ui-html.ts` (generato, non va modificato né salvato su Git); le route `app/route.ts` (`/`) e `app/login/route.ts` le restituiscono.
-- `middleware.ts` + `lib/auth.ts`: senza il cookie di sessione (`flow_session`, firmato con `FLOW_PASSWORD`, 30 giorni) le pagine portano a `/login` e le API rispondono 401. Cambiando la password, tutti i dispositivi devono rientrare.
-- API: `GET /api/state` (tutte le bacheche), `PUT /api/boards/:id` (salva una bacheca intera, in una transazione), `DELETE /api/boards/:id`, `POST /api/login`, `POST /api/logout`.
+- `middleware.ts` + `lib/auth.ts`: senza il cookie di sessione (`flow_session`: email, nome e foto firmati con `AUTH_SECRET`, 30 giorni) le pagine portano a `/login` e le API rispondono 401. Cambiando `AUTH_SECRET`, tutti devono rientrare.
+- Login: `GET /api/auth/google` porta a Google, che rimanda a `/api/auth/callback/google` (va indicato tra gli URI di reindirizzamento del client OAuth). Variabili su Vercel: `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`, `AUTH_SECRET`, `FLOW_ADMIN`.
+- API: `GET /api/state` (utente, spazi visibili e loro bacheche), `PUT /api/boards/:id` (salva una bacheca intera in una transazione; con una versione vecchia risponde 409 e restituisce quella attuale), `DELETE /api/boards/:id`, `POST /api/spaces`, `PATCH`/`DELETE /api/spaces/:id` (solo amministratori), `POST /api/logout`. Ogni API controlla che l'utente abbia accesso allo spazio.
+- `lib/sanitize.ts` pulisce l'HTML di descrizioni e messaggi; `lib/store.ts` controlla anche identificativi, colori delle etichette e indirizzi dei link, perché l'interfaccia li inserisce nella pagina.
 - `lib/schema.ts` (Drizzle) segue la sezione 6; le migrazioni stanno in `drizzle/` (`npm run db:generate` dopo una modifica allo schema) e vengono applicate da `scripts/migrate.mjs` a ogni pubblicazione su Vercel.
 - Il database si legge da `DATABASE_URL` (o `POSTGRES_URL`), aggiunta da Vercel con l'integrazione Neon.
-- L'interfaccia salva solo le bacheche cambiate e, tornando sulla pagina, ricarica i dati per vedere le modifiche fatte da un altro dispositivo. Se le API non esistono (anteprima senza server) salva nel browser.
-- Prima di aprire FLOW ai clienti (sezione 9) va aggiunta la pulizia dell'HTML di descrizioni e messaggi lato server.
+- L'interfaccia salva solo le bacheche cambiate e ricarica i dati ogni 20 secondi e tornando sulla pagina. Se le API non esistono (anteprima senza server) salva nel browser, con un solo utente "Io".
 
 ## 9. Dopo la beta: condivisione con i clienti
 
-Quando FLOW sarà aperto ai clienti:
-- ogni cliente vede **solo le bacheche a cui è invitato**, e lì può fare tutto;
-- l'accesso avviene via email con link magico, ad esempio con Auth.js e un servizio email come Resend;
-- al database si aggiungono le tabelle `users`, `board_members` e `invites`, e ogni query va filtrata per utente;
-- il proprietario vede tutte le bacheche ed è l'unico che può eliminarle e gestire gli inviti.
+Il login con Google e gli spazi (sezione 2) coprono già il caso di un piccolo team esterno. Restano possibili in seguito:
+- inviti per singola bacheca invece che per spazio;
+- accesso via email con link magico, per chi non ha un account Google;
+- ruoli diversi (ad esempio chi può solo leggere).
 
 ## 10. Da decidere
 

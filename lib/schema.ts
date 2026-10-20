@@ -3,9 +3,35 @@ import { pgTable, text, real, boolean, date, timestamp, integer, primaryKey, ind
 /* Modello dati della sezione 6 di claude.md. Gli id li genera il client, così l'interfaccia
    può aggiornarsi subito e salvare in background. Eliminando una bacheca si elimina tutto a cascata. */
 
+/* Uno spazio raccoglie le bacheche di un gruppo di persone: chi è nello spazio le vede tutte */
+export const spaces = pgTable('spaces', {
+  id: text('id').primaryKey(),
+  nome: text('nome').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
+});
+
+/* Persone invitate in uno spazio, per email (l'account Google con cui entrano) */
+export const spaceMembers = pgTable('space_members', {
+  spaceId: text('space_id').notNull().references(() => spaces.id, { onDelete: 'cascade' }),
+  email: text('email').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
+}, t => [primaryKey({ columns: [t.spaceId, t.email] })]);
+
+/* Nome e foto di chi è entrato almeno una volta, per firmare messaggi e membri */
+export const users = pgTable('users', {
+  email: text('email').primaryKey(),
+  nome: text('nome').notNull(),
+  foto: text('foto').notNull().default(''),
+  ultimoAccesso: timestamp('ultimo_accesso', { withTimezone: true }).notNull().defaultNow()
+});
+
 export const boards = pgTable('boards', {
   id: text('id').primaryKey(),
+  spaceId: text('space_id').notNull().default('principale').references(() => spaces.id, { onDelete: 'cascade' }),
   titolo: text('titolo').notNull(),
+  /* cresce a ogni salvataggio: se due persone salvano insieme, la seconda se ne accorge */
+  versione: integer('versione').notNull().default(0),
+  modificatoDa: text('modificato_da').notNull().default(''),
   posizione: real('posizione').notNull().default(0),
   vista: text('vista').notNull().default('essential'),
   colore: integer('colore'),
