@@ -57,12 +57,12 @@ Ogni scheda contiene sempre:
   - **Invio va a capo**; si spedisce con il pulsante blu o con Cmd+Invio, così non parte mai un messaggio a metà.
   - Sotto i **propri** messaggi ci sono **Modifica · Elimina** (sul computer compaiono passandoci sopra). Modifica apre il testo con la stessa barra di formattazione, Salva e Annulla; un messaggio modificato mostra "modificato" accanto all'ora. Elimina chiede conferma. I messaggi del cliente non si possono modificare.
 
-E, solo se aggiunti, questi **moduli**:
+E questi **moduli**, tutti visibili nelle schede nuove (si possono nascondere da **+ Moduli**):
 
 - **Checklist**: elementi da spuntare, con l'avanzamento visibile sulla scheda (es. 2/5)
 - **Link**: uno o più link, con titolo opzionale
 - **Scadenza**: una data, con evidenza visiva se vicina (arancione) o passata (rosso)
-- **Etichette colore**: per cliente, priorità o tipo di lavoro. Ogni bacheca ha il suo set di etichette.
+- **Etichette colore**: per cliente, priorità o tipo di lavoro. Ogni bacheca ha il suo set di etichette, di partenza *Urgente, In attesa, Cliente, Interno, Idea*: nella sezione Etichette di una scheda, **Modifica etichette** permette di rinominarle, cambiarne il colore (tocco sul pallino), aggiungerle ed eliminarle; valgono per tutta la bacheca.
 - **Membri**: le persone coinvolte nella scheda
 
 **Niente allegati.** Non si caricano file: solo link esterni.
@@ -105,7 +105,7 @@ Azioni sulle schede:
 - Palette ridotta: il colore compare solo dove ha un significato (etichette, scadenze).
 - Tema chiaro e scuro.
 - Su telefono (tema Sistema) i testi seguono le misure di iOS: corpo 17, titolo della scheda 26 in grassetto. In entrambi i temi le icone ✕ e "…" sono grandi e facili da toccare, e la pagina non si ingrandisce da sola toccando un campo di testo.
-- **Due temi grafici**, scelti dalla voce **Tema** in alto a destra nella pagina iniziale (la scelta vale per il singolo dispositivo):
+- **Due temi grafici**, scelti dalla voce **Tema** in alto a destra nella pagina iniziale (la scelta vale per il singolo dispositivo; senza scelta si usa **Carta**):
   - **Sistema**: lo stile Apple descritto sopra. Nella pagina iniziale ogni bacheca ha in cima una fascia di colore, come su Trello (stessi sei colori del tema Carta, scelti dal menu "…" della bacheca alla voce *Cambia colore ›*).
   - **Carta**: come un planner stampato. Bianco e nero, linee sottili nere o grigie al posto di riquadri e ombre, titoli in **maiuscolo con spaziatura ampia**, carattere **Geologica** (Google Fonts, con latino esteso, cirillico e greco per eventuali traduzioni). Titoli di pagina centrati e in grassetto. Nella pagina iniziale ogni bacheca è una **tessera Pantone**: campitura di colore pieno in alto e nome sotto su fondo bianco, centrato e in maiuscolo, con una leggera ombra ("+ Nuova bacheca" tratteggiato). I colori delle tessere sono forti e diversi da quelli dei post-it (rosso, arancio, tiffany, verde, blu, magenta), così bacheche e schede non si confondono; il colore è assegnato in automatico oppure scelto dal menu "…" della tessera alla voce *Cambia colore ›* (il sottomenu resta aperto mentre provi i colori). Le schede sono **post-it**: blocchi di colore pieno in una palette di toni carta smorzati (beige, rosa antico, azzurro polvere, malva, salvia, pesca), senza linee, con una leggera ombra; ogni scheda ha sempre lo stesso colore (assegnato in automatico, oppure scelto nel menu "…" della scheda alla voce *Colore*), così si riconosce quando la sposti; la scheda aperta ha l'intestazione del suo colore e nessun bordo nero, e quelle in *Fatto* sono sbiadite; le colonne hanno il titolo centrato sopra una linea nera. Il colore resta solo dove ha un significato (scadenze, pallini delle etichette). Anche le voci dei menu sono in maiuscolo spaziato, come le sezioni.
 - Responsive: deve funzionare bene **sia su computer sia su telefono**. Le colonne hanno larghezza fissa (come su Trello) e restano affiancate anche su telefono, dove scorrono in orizzontale. Le schede prendono la larghezza della colonna e l'altezza dal contenuto; i titoli non vengono mai tagliati.
