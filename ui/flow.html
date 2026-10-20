@@ -7,6 +7,8 @@
 <style>
 /* Layout: barra in alto con titolo grande in stile iOS, sotto le colonne affiancate a larghezza fissa che scorrono in orizzontale, come su Trello, anche su telefono. */
 :root {
+  /* bacheche (in entrambi i temi): colori pieni, come una mazzetta Pantone */
+  --bc-0: #D2232A; --bc-1: #E06F2A; --bc-2: #9BD8D2; --bc-3: #5A9B63; --bc-4: #1F3A9A; --bc-5: #BF3AAB;
   --bg: #F2F2F7;
   --surface: #FFFFFF;
   --fill: rgba(120,120,128,.12);
@@ -94,8 +96,6 @@
   /* post-it: toni carta smorzati */
   --pi-0: #EADFC4; --pi-1: #E6A9A2; --pi-2: #AFC1D1; --pi-3: #C9A9AE; --pi-4: #C3D6B4; --pi-5: #F2C29E;
   --pi-ink: #1E1E1E;
-  /* tessere delle bacheche: colori pieni, come una mazzetta Pantone */
-  --bc-0: #D2232A; --bc-1: #E06F2A; --bc-2: #9BD8D2; --bc-3: #5A9B63; --bc-4: #1F3A9A; --bc-5: #BF3AAB;
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
@@ -357,7 +357,6 @@ body.grabbing, body.grabbing * { cursor: grabbing !important; }
 .menu .mk { width: 16px; display: grid; place-items: center; color: var(--blue); }
 .menu .mk svg.i { width: 14px; height: 14px; stroke-width: 2.2; color: var(--blue); }
 .menu .mi small { margin-left: auto; padding-left: 16px; font: var(--t-cap); color: var(--label-3); }
-.tile .swatch { display: none; }
 .dots { display: inline-flex; gap: 3px; }
 .dots i { width: 8px; height: 8px; border-radius: 50%; background: var(--c); }
 
@@ -481,11 +480,13 @@ body.grabbing, body.grabbing * { cursor: grabbing !important; }
   transition: box-shadow .15s;
 }
 .tile:hover { box-shadow: var(--lift-shadow); }
-.tile h2 { font: var(--t-title); font-size: 18px; margin: 0; padding-right: 30px; text-wrap: balance; overflow-wrap: anywhere; }
+.tile h2 { font: var(--t-title); font-size: 18px; margin: 0; text-wrap: balance; overflow-wrap: anywhere; }
 .tile-meta { display: flex; flex-wrap: wrap; gap: 4px 12px; font: var(--t-cap); min-height: 16px; font-variant-numeric: tabular-nums; }
+/* campitura di colore in cima alla bacheca, come su Trello */
+.tile .swatch { height: 96px; margin: -16px -16px 0; border-radius: 14px 14px 0 0; background: var(--bc); }
 .tile-more { position: absolute; top: 10px; right: 10px; }
 .tile:has(.tile-more .menu) { z-index: 5; }
-.tile-more .icon-btn { width: 28px; height: 28px; color: var(--label-2); opacity: 0; transition: opacity .15s; }
+.tile-more .icon-btn { width: 28px; height: 28px; color: #fff; background: rgba(0,0,0,.2); opacity: 0; transition: opacity .15s; }
 .tile:hover .tile-more .icon-btn, .tile:focus-within .tile-more .icon-btn, .tile-more .icon-btn[aria-expanded="true"] { opacity: 1; }
 @media (hover: none) { .tile-more .icon-btn { opacity: 1; } }
 .tile-new {
@@ -675,9 +676,8 @@ body.grabbing, body.grabbing * { cursor: grabbing !important; }
 [data-skin="carta"] .tile h2 { font: 600 13px/1.45 var(--font); text-transform: uppercase; letter-spacing: var(--caps); }
 /* nome al centro del riquadro, come "+ Nuova bacheca"; gli avvisi di scadenza subito sotto */
 [data-skin="carta"] .tile { justify-content: flex-start; align-items: stretch; text-align: center; gap: 6px; }
-[data-skin="carta"] .tile .swatch { display: block; aspect-ratio: 4 / 3; max-height: 150px; background: var(--bc); margin-bottom: 10px; }
+[data-skin="carta"] .tile .swatch { height: auto; aspect-ratio: 4 / 3; max-height: 150px; margin: 0 0 10px; border-radius: 0; }
 [data-skin="carta"] .tile h2 { padding: 0 16px; }
-[data-skin="carta"] .tile-more .icon-btn { color: #fff; background: rgba(0,0,0,.2); }
 [data-skin="carta"] .home-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
 [data-skin="carta"] .tile-new { min-height: 150px; }
 [data-skin="carta"] .tile-meta { justify-content: center; min-height: 0; }
@@ -1775,7 +1775,6 @@ function renderHome() {
   $('#home-empty').hidden = boards.length > 0;
   $('#home-grid').innerHTML = boards.map(b => {
     const u = urgentOf(b);
-    const carta = document.documentElement.dataset.skin === 'carta';
     return `<article class="tile" role="button" tabindex="0" data-openboard="${b.id}" style="--bc: var(--bc-${boardTint(b)})">
       <div class="swatch" aria-hidden="true"></div>
       <h2>${esc(b.title)}</h2>
@@ -1786,7 +1785,7 @@ function renderHome() {
       <div class="more-wrap tile-more">
         <button class="icon-btn" type="button" data-tilemore="${b.id}" aria-label="Altre azioni" aria-expanded="${homeUi.menu === b.id}">${ICON.more}</button>
         ${homeUi.menu === b.id ? `<div class="menu right card-menu" role="menu">
-          ${carta ? `<button type="button" class="mi sub-open" data-boardcolors="${b.id}" aria-haspopup="menu">Cambia colore${ICON.chevr}</button><div class="menu-sep"></div>` : ''}
+          <button type="button" class="mi sub-open" data-boardcolors="${b.id}" aria-haspopup="menu">Cambia colore${ICON.chevr}</button><div class="menu-sep"></div>
           <button type="button" class="mi danger" data-delboard="${b.id}">Elimina bacheca</button></div>` : ''}
         ${homeUi.menu === 'c:' + b.id ? `<div class="menu right card-menu" role="menu">
           <button type="button" class="mi sub-back" data-tilemore="${b.id}">${ICON.chevl}Colore</button>
