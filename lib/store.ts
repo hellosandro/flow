@@ -13,7 +13,7 @@ export type UiCard = {
   createdAt?: number;
 };
 export type UiBoard = {
-  id: string; title: string; view: string; created: string;
+  id: string; title: string; view: string; created: string; color?: number | null;
   labels: { id: string; name: string; color: string }[];
   columns: { id: string; title: string; type: string }[];
   cards: UiCard[];
@@ -49,7 +49,7 @@ export async function loadAll() {
   const linksOf = group(lks, 'cardId'), msgsOf = group(msgs, 'cardId');
 
   return bs.map(b => ({
-    id: b.id, title: b.titolo, view: b.vista, created: b.createdAt.toISOString().slice(0, 10),
+    id: b.id, title: b.titolo, view: b.vista, color: b.colore, created: b.createdAt.toISOString().slice(0, 10),
     people: PEOPLE,
     labels: labsOf(b.id).map(l => ({ id: l.id, name: l.nome, color: l.colore })),
     columns: colsOf(b.id).map(c => ({ id: c.id, title: c.titolo, type: c.tipo })),
@@ -80,6 +80,7 @@ export async function saveBoard(id: string, input: UiBoard, posizione: number) {
     await tx.delete(t.boards).where(eq(t.boards.id, id));
     await tx.insert(t.boards).values({
       id, titolo: str(input.title, 500) || 'Senza titolo', posizione, vista: input.view === 'full' ? 'full' : 'essential',
+      colore: Number.isInteger(input.color) && input.color! >= 0 && input.color! < 6 ? input.color! : null,
       createdAt: isDay(input.created) ? new Date(input.created + 'T12:00:00Z') : now
     });
     if (cols.length) await tx.insert(t.columns).values(cols.map((c, i) => ({ id: c.id, boardId: id, titolo: str(c.title, 500) || 'Senza titolo', tipo: str(c.type, 40) || 'variabile', posizione: i })));

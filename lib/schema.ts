@@ -8,6 +8,7 @@ export const boards = pgTable('boards', {
   titolo: text('titolo').notNull(),
   posizione: real('posizione').notNull().default(0),
   vista: text('vista').notNull().default('essential'),
+  colore: integer('colore'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
 });
 

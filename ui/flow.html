@@ -94,6 +94,8 @@
   /* post-it: toni carta smorzati */
   --pi-0: #EADFC4; --pi-1: #E6A9A2; --pi-2: #AFC1D1; --pi-3: #C9A9AE; --pi-4: #C3D6B4; --pi-5: #F2C29E;
   --pi-ink: #1E1E1E;
+  /* tessere delle bacheche: colori pieni, come una mazzetta Pantone */
+  --bc-0: #D2232A; --bc-1: #E06F2A; --bc-2: #9BD8D2; --bc-3: #5A9B63; --bc-4: #1F3A9A; --bc-5: #BF3AAB;
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
@@ -355,6 +357,7 @@ body.grabbing, body.grabbing * { cursor: grabbing !important; }
 .menu .mk { width: 16px; display: grid; place-items: center; color: var(--blue); }
 .menu .mk svg.i { width: 14px; height: 14px; stroke-width: 2.2; color: var(--blue); }
 .menu .mi small { margin-left: auto; padding-left: 16px; font: var(--t-cap); color: var(--label-3); }
+.tile .swatch { display: none; }
 .dots { display: inline-flex; gap: 3px; }
 .dots i { width: 8px; height: 8px; border-radius: 50%; background: var(--c); }
 
@@ -481,6 +484,7 @@ body.grabbing, body.grabbing * { cursor: grabbing !important; }
 .tile h2 { font: var(--t-title); font-size: 18px; margin: 0; padding-right: 30px; text-wrap: balance; overflow-wrap: anywhere; }
 .tile-meta { display: flex; flex-wrap: wrap; gap: 4px 12px; font: var(--t-cap); min-height: 16px; font-variant-numeric: tabular-nums; }
 .tile-more { position: absolute; top: 10px; right: 10px; }
+.tile:has(.tile-more .menu) { z-index: 5; }
 .tile-more .icon-btn { width: 28px; height: 28px; color: var(--label-2); opacity: 0; transition: opacity .15s; }
 .tile:hover .tile-more .icon-btn, .tile:focus-within .tile-more .icon-btn, .tile-more .icon-btn[aria-expanded="true"] { opacity: 1; }
 @media (hover: none) { .tile-more .icon-btn { opacity: 1; } }
@@ -664,13 +668,18 @@ body.grabbing, body.grabbing * { cursor: grabbing !important; }
 [data-skin="carta"] .col-new .add { border: 0; border-bottom: 1px dashed var(--label-3); justify-content: flex-start; }
 [data-skin="carta"] .home-grid { gap: 28px 24px; }
 /* le bacheche sono riquadri bianchi con il bordo nero: si riconoscono subito come oggetti da aprire */
-[data-skin="carta"] .tile { border-radius: 0; box-shadow: none; background: var(--surface); border: 1px solid var(--rule); padding: 15px 16px; min-height: 104px; }
-[data-skin="carta"] .tile:hover { box-shadow: none; }
-[data-skin="carta"] .tile:hover { background: var(--fill); }
+/* bacheche come tessere Pantone: campitura di colore sopra, nome su fondo bianco sotto */
+[data-skin="carta"] .tile { border-radius: 0; background: var(--surface); border: 0; padding: 0 0 16px; min-height: 0;
+  box-shadow: 0 1px 2px rgba(0,0,0,.06), 0 10px 22px -12px rgba(0,0,0,.35); transition: transform .15s, box-shadow .15s; }
+[data-skin="carta"] .tile:hover { transform: translateY(-2px); box-shadow: 0 1px 2px rgba(0,0,0,.06), 0 16px 28px -14px rgba(0,0,0,.4); }
 [data-skin="carta"] .tile h2 { font: 600 13px/1.45 var(--font); text-transform: uppercase; letter-spacing: var(--caps); }
 /* nome al centro del riquadro, come "+ Nuova bacheca"; gli avvisi di scadenza subito sotto */
-[data-skin="carta"] .tile { justify-content: center; align-items: center; text-align: center; gap: 6px; }
-[data-skin="carta"] .tile h2 { padding: 0 30px; }
+[data-skin="carta"] .tile { justify-content: flex-start; align-items: stretch; text-align: center; gap: 6px; }
+[data-skin="carta"] .tile .swatch { display: block; aspect-ratio: 4 / 3; max-height: 150px; background: var(--bc); margin-bottom: 10px; }
+[data-skin="carta"] .tile h2 { padding: 0 16px; }
+[data-skin="carta"] .tile-more .icon-btn { color: #fff; background: rgba(0,0,0,.2); }
+[data-skin="carta"] .home-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+[data-skin="carta"] .tile-new { min-height: 150px; }
 [data-skin="carta"] .tile-meta { justify-content: center; min-height: 0; }
 [data-skin="carta"] .tile-meta:empty { display: none; }
 [data-skin="carta"] .tile-new { border: 1px dashed var(--label-3); border-radius: 0; justify-content: center; align-items: center; padding: 16px; font: var(--t-cap); text-transform: uppercase; letter-spacing: var(--caps); }
@@ -1759,11 +1768,16 @@ function urgentOf(b) {
   }
   return { late, soon };
 }
+/* colore della tessera (tema Carta): scelto dal menu "…" oppure, se manca, sempre lo stesso per la stessa bacheca */
+const BOARD_TINTS = ['Rosso', 'Arancio', 'Tiffany', 'Verde', 'Blu', 'Magenta'];
+const boardTint = b => Number.isInteger(b.color) ? b.color : [...b.id].reduce((n, ch) => n + ch.charCodeAt(0), 0) % 6;
 function renderHome() {
   $('#home-empty').hidden = boards.length > 0;
   $('#home-grid').innerHTML = boards.map(b => {
     const u = urgentOf(b);
-    return `<article class="tile" role="button" tabindex="0" data-openboard="${b.id}">
+    const carta = document.documentElement.dataset.skin === 'carta';
+    return `<article class="tile" role="button" tabindex="0" data-openboard="${b.id}" style="--bc: var(--bc-${boardTint(b)})">
+      <div class="swatch" aria-hidden="true"></div>
       <h2>${esc(b.title)}</h2>
       <div class="tile-meta">
         ${u.late ? `<span class="due-late">${u.late === 1 ? '1 scaduta' : u.late + ' scadute'}</span>` : ''}
@@ -1771,7 +1785,14 @@ function renderHome() {
       </div>
       <div class="more-wrap tile-more">
         <button class="icon-btn" type="button" data-tilemore="${b.id}" aria-label="Altre azioni" aria-expanded="${homeUi.menu === b.id}">${ICON.more}</button>
-        ${homeUi.menu === b.id ? `<div class="menu right" role="menu"><button type="button" class="mi danger" data-delboard="${b.id}">Elimina bacheca</button></div>` : ''}
+        ${homeUi.menu === b.id ? `<div class="menu right card-menu" role="menu">
+          ${carta ? `<button type="button" class="mi sub-open" data-boardcolors="${b.id}" aria-haspopup="menu">Cambia colore${ICON.chevr}</button><div class="menu-sep"></div>` : ''}
+          <button type="button" class="mi danger" data-delboard="${b.id}">Elimina bacheca</button></div>` : ''}
+        ${homeUi.menu === 'c:' + b.id ? `<div class="menu right card-menu" role="menu">
+          <button type="button" class="mi sub-back" data-tilemore="${b.id}">${ICON.chevl}Colore</button>
+          <div class="menu-sep"></div>
+          ${BOARD_TINTS.map((n, i) => `<button type="button" class="mi" role="menuitemradio" aria-checked="${boardTint(b) === i}" data-boardcolor="${i}" data-board="${b.id}"><i class="dot" style="--c: var(--bc-${i})"></i>${n}</button>`).join('')}
+        </div>` : ''}
       </div>
     </article>`;
   }).join('') + `<button type="button" class="tile tile-new" data-newboard>${ICON.plus}Nuova bacheca</button>`;
@@ -1798,7 +1819,12 @@ homeEl.addEventListener('click', e => {
   const t = e.target;
   if (homeUi.menu && !t.closest('.tile-more')) { homeUi.menu = null; renderHome(); }
   const more = t.closest('[data-tilemore]');
-  if (more) { homeUi.menu = homeUi.menu === more.dataset.tilemore ? null : more.dataset.tilemore; renderHome(); return; }
+  if (more) { homeUi.menu = homeUi.menu === more.dataset.tilemore && !more.classList.contains('sub-back') ? null : more.dataset.tilemore; renderHome(); return; }
+  const bcs = t.closest('[data-boardcolors]');
+  if (bcs) { homeUi.menu = 'c:' + bcs.dataset.boardcolors; renderHome(); return; }
+  /* il sottomenu resta aperto: si possono provare più colori di seguito */
+  const bc = t.closest('[data-boardcolor]');
+  if (bc) { const b = boards.find(x => x.id === bc.dataset.board); b.color = +bc.dataset.boardcolor; dirty.add(b.id); scheduleSave(); renderHome(); return; }
   const del = t.closest('[data-delboard]');
   if (del) { homeUi.menu = null; homeUi.confirm = del.dataset.delboard; renderHome(); return; }
   if (t.closest('[data-homecancel]')) { homeUi.confirm = null; renderHome(); return; }
