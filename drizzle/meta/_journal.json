@@ -22,6 +22,13 @@
       "when": 1792425957888,
       "tag": "0002_colore_schede",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792484729970,
+      "tag": "0003_colore_bacheche",
+      "breakpoints": true
     }
   ]
 }
