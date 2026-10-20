@@ -51,8 +51,8 @@ Ogni scheda contiene sempre:
 
 - **Titolo** (obbligatorio)
 - **Descrizione**: testo con formattazione semplice, come su Trello: titolo e sottotitolo, grassetto, corsivo, barrato, sottolineato, elenchi puntati e numerati, link. Niente immagini né file.
-- **Messaggi**: conversazione sulla scheda. Nella beta serve come diario; con la condivisione (sezione 9) diventa la chat con il cliente.
-  - Ogni messaggio mostra in alto, come su Trello, iniziali e **nome di chi scrive** in evidenza, con data e ora; sotto, il testo in un riquadro leggero (azzurrino per i propri messaggi).
+- **Commenti** (nel codice e nel database restano "messaggi"): note e domande sulla scheda, lette da chi lavora nello spazio. Si chiameranno "Discussione" se arriveranno le notifiche.
+  - Ogni commento mostra in alto, come su Trello, iniziali e **nome di chi scrive** in evidenza, con data e ora; sotto, il testo in un riquadro leggero (azzurrino per i propri commenti).
   - Il testo si può formattare come la descrizione, ma senza titoli: grassetto, corsivo, barrato, sottolineato, elenchi, link. La barra di formattazione si apre con il pulsante **Aa** accanto al campo; le scorciatoie funzionano anche a barra chiusa.
   - **Invio va a capo**; si spedisce con il pulsante blu o con Cmd+Invio, così non parte mai un messaggio a metà.
   - Sotto i **propri** messaggi ci sono **Modifica · Elimina** (sul computer compaiono passandoci sopra). Modifica apre il testo con la stessa barra di formattazione, Salva e Annulla; un messaggio modificato mostra "modificato" accanto all'ora. Elimina chiede conferma. I messaggi del cliente non si possono modificare.
@@ -77,7 +77,7 @@ Ogni bacheca ha due viste, scelte con l'icona a forma di occhio in alto a destra
 Aprendo una scheda si vede, dall'alto in basso:
 
 1. il **titolo**;
-2. sotto, a sinistra il **contenuto della sezione scelta** e **a destra una barra laterale** con le sezioni in elenco (icona, nome e un riassunto a destra: numero di messaggi, avanzamento della checklist, data di scadenza, pallini delle etichette, iniziali dei membri): *Descrizione*, *Messaggi*, poi i moduli aggiunti; in fondo, dopo una linea, **+ Moduli**;
+2. sotto, a sinistra il **contenuto della sezione scelta** e **a destra una barra laterale** con le sezioni in elenco (icona, nome e un riassunto a destra: numero di messaggi, avanzamento della checklist, data di scadenza, pallini delle etichette, iniziali dei membri): *Descrizione*, *Commenti*, poi i moduli aggiunti; in fondo, dopo una linea, **+ Moduli**;
 3. su telefono la barra resta a destra ma chiusa, come **striscia di sole icone**; l'icona in cima la **apre** mostrando anche nomi e riassunti, e aprendosi **spinge il contenuto verso sinistra** (effetto push). Toccando una sezione o il contenuto si richiude. Non c'è una seconda schermata.
 
 Regole dei moduli:
