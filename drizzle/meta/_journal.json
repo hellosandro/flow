@@ -29,6 +29,13 @@
       "when": 1792484729970,
       "tag": "0003_colore_bacheche",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792495134489,
+      "tag": "0004_spazi_e_utenti",
+      "breakpoints": true
     }
   ]
 }

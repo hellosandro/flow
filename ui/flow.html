@@ -502,6 +502,28 @@ body.grabbing, body.grabbing * { cursor: grabbing !important; }
 .alert { width: min(280px, 100%); background: var(--surface); border-radius: 14px; box-shadow: var(--lift-shadow); text-align: center; overflow: hidden; }
 .alert h3 { font: var(--t-head); margin: 18px 16px 4px; text-wrap: balance; }
 .alert p { font: var(--t-sub); color: var(--label-2); margin: 0 16px 16px; text-wrap: balance; }
+.alert.space { width: min(360px, 100%); text-align: left; }
+.alert.space h3 { text-align: center; }
+.sp-body { display: grid; gap: 8px; padding: 0 16px 14px; }
+.sp-input { width: 100%; font: var(--t-body); color: var(--label); background: var(--bg); border: .5px solid var(--sep); border-radius: 10px; padding: 10px 12px; }
+.alert .sp-label { font: var(--t-cap); color: var(--label-2); margin: 8px 0 0; }
+#space-menu { min-width: 230px; }
+#space-menu .mi { white-space: nowrap; }
+#space-menu .vt small { margin-left: 0; padding-left: 0; }
+.sp-list { list-style: none; margin: 0; padding: 0; }
+.sp-list li { display: flex; align-items: center; gap: 8px; padding: 9px 0; border-bottom: .5px solid var(--sep); font: var(--t-sub); }
+.sp-list li span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.sp-list li.none { color: var(--label-2); }
+.alert-actions button:disabled { color: var(--label-3); cursor: default; background: none; }
+.sp-list button { font: var(--t-sub); color: var(--red); }
+.sp-add { display: flex; gap: 8px; }
+.sp-add button { font: var(--t-body); font-weight: 600; color: var(--blue); padding: 0 4px; }
+.alert .sp-note { font: var(--t-cap); color: var(--label-2); margin: 2px 0 0; text-wrap: pretty; }
+.toast {
+  position: fixed; left: 50%; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 50; max-width: calc(100% - 32px);
+  font: var(--t-sub); color: var(--surface); background: var(--label); padding: 8px 14px; border-radius: 14px; box-shadow: var(--lift-shadow); text-align: center;
+}
+[data-skin="carta"] .toast, [data-skin="carta"] .sp-input { border-radius: 0; }
 .alert-actions { display: grid; grid-template-columns: 1fr 1fr; border-top: .5px solid var(--sep); }
 .alert-actions button { padding: 11px 8px; font: var(--t-body); color: var(--blue); }
 .alert-actions button + button { border-left: .5px solid var(--sep); }
@@ -761,6 +783,10 @@ body.grabbing, body.grabbing * { cursor: grabbing !important; }
     <div class="nav">
       <span class="brand">FLOW</span>
       <div class="nav-right">
+        <div class="view-wrap" id="space-wrap" hidden>
+          <button type="button" class="logout" id="space-btn" aria-haspopup="menu" aria-expanded="false">Spazi</button>
+          <div class="menu right view-menu" id="space-menu" role="menu" hidden></div>
+        </div>
         <div class="view-wrap" id="skin-wrap">
           <button type="button" class="logout" id="skin-btn" aria-haspopup="menu" aria-expanded="false">Tema</button>
           <div class="menu right view-menu" id="skin-menu" role="menu" hidden>
@@ -803,6 +829,7 @@ body.grabbing, body.grabbing * { cursor: grabbing !important; }
 </div>
 
 <div class="sheet-wrap" id="sheet" hidden></div>
+<div class="toast" id="toast" role="status" hidden></div>
 <div class="save-status" id="save-status" role="status" hidden>Salvataggio non riuscito. Riprovo tra poco…</div>
 
 <script>
@@ -842,7 +869,7 @@ function makeBoard(title, cards = []) {
   const b = {
     id: id(), title, created: today, view: 'essential', adding: null, open: null,
     labels: [['Logo', 'blue'], ['Stampa', 'orange'], ['Web', 'teal'], ['Amministrazione', 'purple'], ['Urgente', 'red']].map(([name, c]) => ({ id: id(), name, color: `var(--${c})` })),
-    people: [{ id: 'p-io', name: 'Io', role: 'Proprietario', initials: 'IO', me: true }],
+    space, people: peopleOf(space),
     columns: [['In corso', 'in_corso'], ['In revisione', 'in_revisione'], ['Fatto', 'fatto']].map(([t, type]) => ({ id: id(), title: t, type }))
   };
   b.cards = cards.map(([col, t, due]) => ({
@@ -855,10 +882,25 @@ function makeBoard(title, cards = []) {
    (anteprima senza server) restano in questo browser. L'interfaccia si aggiorna subito e
    salva in background; se il salvataggio non riesce lo segnala e riprova. */
 const STORE = 'flow-v1';
-const PEOPLE = [{ id: 'p-io', name: 'Io', role: 'Proprietario', initials: 'IO', me: true }];
 let boards = [], mode = 'server', saving = false, saveTimer = null, retryDelay = 0;
 const dirty = new Set(), removed = new Set(), lastSaved = new Map();
-const serialize = ({ open, adding, people, ...rest }) => rest;
+const serialize = ({ open, adding, people, version, by, ...rest }) => rest;
+
+/* Chi sta usando Flow e gli spazi che vede. Senza server (anteprima) c'è solo "Io". */
+let ME = { email: 'io', name: 'Io', picture: '', admin: true };
+let spaces = [{ id: 'principale', name: 'Il mio spazio', people: [{ email: 'io', name: 'Io', picture: '' }] }];
+let space = 'principale';
+try { space = localStorage.getItem('flow-space') || space; } catch {}
+const spaceOf = sid => spaces.find(x => x.id === sid);
+const initialsOf = name => (name.trim().split(/\s+/).slice(0, 2).map(w => w[0]).join('') || '?').toUpperCase();
+function peopleOf(sid) {
+  return (spaceOf(sid)?.people || []).map(p => ({ id: p.email, name: p.name, role: p.email === ME.email ? 'Tu' : p.email, initials: initialsOf(p.name), me: p.email === ME.email }));
+}
+function setSpace(sid) {
+  space = spaceOf(sid) ? sid : spaces[0]?.id;
+  try { localStorage.setItem('flow-space', space); } catch {}
+}
+
 function persist() {
   /* si salva solo se la bacheca è davvero cambiata rispetto all'ultima versione salvata */
   if (!state) return;
@@ -867,6 +909,46 @@ function persist() {
 }
 function removeBoard(bid) { dirty.delete(bid); removed.add(bid); lastSaved.delete(bid); scheduleSave(0); }
 function scheduleSave(ms = 600) { clearTimeout(saveTimer); saveTimer = setTimeout(flush, ms); }
+
+/* Quando due persone modificano la stessa bacheca: si parte dalla versione dell'altro e si
+   rimettono sopra le proprie modifiche, scheda per scheda. I messaggi si sommano. */
+function mergeBoard(base, mine, theirs) {
+  const same = (x, y) => JSON.stringify(x) === JSON.stringify(y);
+  const out = { ...theirs };
+  for (const k of ['title', 'view', 'color', 'labels', 'columns']) if (!same(mine[k], base[k])) out[k] = mine[k];
+  const byId = list => new Map((list || []).map(c => [c.id, c]));
+  const B = byId(base.cards), M = byId(mine.cards), T = byId(theirs.cards);
+  const cards = [];
+  for (const c of theirs.cards) {
+    if (B.has(c.id) && !M.has(c.id)) continue; /* l'ho eliminata io */
+    const m = M.get(c.id);
+    if (!m || same(m, B.get(c.id))) { cards.push(c); continue; }
+    const known = new Set([...(B.get(c.id)?.messages || []), ...m.messages].map(x => x.id));
+    cards.push({ ...m, messages: [...m.messages, ...c.messages.filter(x => !known.has(x.id))].sort((x, y) => x.at - y.at) });
+  }
+  for (const m of mine.cards) if (!B.has(m.id) && !T.has(m.id)) cards.push(m); /* nuove mie */
+  out.cards = cards;
+  return out;
+}
+function adoptServerBoard(b, sb) {
+  /* sostituisce il contenuto di una bacheca con quello del server, senza chiudere ciò che è aperto */
+  const { open, adding } = b;
+  for (const k of Object.keys(b)) delete b[k];
+  Object.assign(b, sb, { people: peopleOf(sb.space) });
+  b.open = b.cards.some(c => c.id === open) ? open : null; b.adding = adding;
+}
+let toastTimer = null;
+function toast(text) {
+  const el = $('#toast'); el.textContent = text; el.hidden = false;
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => { el.hidden = true; }, 4000);
+}
+function rerender() {
+  if (!appEl.hidden && state) {
+    if (!boards.includes(state)) { showHome(); return; }
+    renderBoard(); if (state.open) renderSheet();
+  } else renderHome();
+}
+
 async function flush({ keepalive = false } = {}) {
   if (mode === 'local') {
     try { localStorage.setItem(STORE, JSON.stringify({ boards: boards.map(serialize) })); } catch {}
@@ -874,21 +956,39 @@ async function flush({ keepalive = false } = {}) {
   }
   if (saving) { scheduleSave(300); return; }
   saving = true;
-  let failed = false;
+  let failed = false, again = false;
   const jobs = [...removed].map(bid => ['DELETE', bid]).concat([...dirty].map(bid => ['PUT', bid]));
   removed.clear(); dirty.clear();
   for (const [method, bid] of jobs) {
     const b = boards.find(x => x.id === bid);
     if (method === 'PUT' && !b) continue;
-    const body = method === 'PUT' ? JSON.stringify({ board: serialize(b), posizione: boards.indexOf(b) }) : undefined;
+    const sent = b && serialize(b);
+    const body = method === 'PUT' ? JSON.stringify({ board: sent, posizione: boards.indexOf(b), version: b.version || 0 }) : undefined;
     try {
       const r = await fetch('/api/boards/' + encodeURIComponent(bid), {
         method, body, headers: body ? { 'Content-Type': 'application/json' } : {},
         keepalive: keepalive && (!body || body.length < 60000)
       });
       if (r.status === 401) { location.href = '/login'; return; }
+      const data = await r.json().catch(() => ({}));
+      if (r.status === 409 && data.board) {
+        /* qualcun altro ha salvato prima: si uniscono le modifiche e si riprova */
+        const base = JSON.parse(lastSaved.get(bid) || 'null') || { cards: [] };
+        const merged = mergeBoard(base, serialize(b), serialize(data.board));
+        adoptServerBoard(b, { ...data.board, ...merged });
+        lastSaved.set(bid, JSON.stringify(serialize(data.board)));
+        if (lastSaved.get(bid) !== JSON.stringify(serialize(b))) { dirty.add(bid); again = true; }
+        toast(`${data.board.by || 'Qualcuno'} ha appena modificato questa bacheca: ho unito le modifiche.`);
+        rerender();
+        continue;
+      }
+      if (r.status === 403) { toast(data.error || 'Non hai accesso a questa bacheca.'); continue; }
       if (!r.ok) throw new Error(r.status);
-      if (b && method === 'PUT') lastSaved.set(bid, JSON.stringify(serialize(b)));
+      if (b && method === 'PUT') {
+        b.version = data.version;
+        lastSaved.set(bid, JSON.stringify(sent));
+        if (JSON.stringify(serialize(b)) !== lastSaved.get(bid)) dirty.add(bid);
+      }
     } catch {
       failed = true;
       (method === 'PUT' ? dirty : removed).add(bid);
@@ -897,37 +997,42 @@ async function flush({ keepalive = false } = {}) {
   saving = false;
   $('#save-status').hidden = !failed;
   if (failed) { retryDelay = Math.min((retryDelay || 2000) * 2, 30000); scheduleSave(retryDelay); }
-  else retryDelay = 0;
+  else { retryDelay = 0; if (again || dirty.size) scheduleSave(0); }
 }
 document.addEventListener('input', persist);
 addEventListener('pagehide', () => { if (dirty.size || removed.size) flush({ keepalive: true }); });
 
-async function fetchBoards() {
+async function fetchState() {
   const r = await fetch('/api/state', { cache: 'no-store' });
   if (r.status === 401) { location.href = '/login'; return null; }
   if (!(r.headers.get('content-type') || '').includes('json')) throw Object.assign(new Error('no-api'), { noApi: true });
   const data = await r.json();
   if (!r.ok) throw new Error(data.error || r.status);
-  return data.boards;
+  return data;
+}
+function adoptSpaces(data) {
+  ME = data.me; spaces = data.spaces || [];
+  setSpace(space);
 }
 function adopt(list) {
   boards = list || [];
   lastSaved.clear();
   for (const b of boards) {
-    b.open = null; b.adding = null; b.people = PEOPLE;
+    b.open = null; b.adding = null; b.space ||= space; b.people = peopleOf(b.space);
     lastSaved.set(b.id, JSON.stringify(serialize(b)));
   }
 }
 async function boot() {
   $('#home-empty').textContent = 'Caricamento…'; $('#home-empty').hidden = false;
   try {
-    const list = await fetchBoards();
-    if (!list) return;
-    adopt(list);
+    const data = await fetchState();
+    if (!data) return;
+    adoptSpaces(data);
+    adopt(data.boards);
   } catch (err) {
     if (err.noApi || location.protocol === 'file:') {
       /* nessun server: anteprima, i dati restano nel browser */
-      mode = 'local';
+      mode = 'local'; space = 'principale';
       let saved = [];
       try { saved = JSON.parse(localStorage.getItem(STORE))?.boards || []; } catch {}
       adopt(saved);
@@ -937,22 +1042,36 @@ async function boot() {
       return;
     }
   }
-  $('#home-empty').textContent = 'Nessuna bacheca. Creane una per il tuo primo progetto o cliente.';
   showHome();
 }
-/* Tornando su FLOW (da un'altra app o da un altro dispositivo) si ricaricano i dati, se non si sta scrivendo */
-document.addEventListener('visibilitychange', async () => {
-  if (document.visibilityState !== 'visible' || mode !== 'server' || saving || dirty.size || removed.size) return;
-  if (state?.open || document.activeElement?.matches?.('input, textarea, [contenteditable]')) return;
-  try {
-    const list = await fetchBoards();
-    if (!list || dirty.size || state?.open) return;
-    const current = state?.id;
-    adopt(list);
-    if (!appEl.hidden) { const b = boards.find(x => x.id === current); if (b) { state = b; renderBoard(); } else showHome(); }
-    else renderHome();
-  } catch {}
-});
+/* Si ricaricano le modifiche degli altri: tornando su FLOW e ogni 20 secondi,
+   ma non mentre si scrive o si sta salvando */
+async function refresh() {
+  if (mode !== 'server' || document.visibilityState !== 'visible' || saving || removed.size) return;
+  if (document.activeElement?.matches?.('input, textarea, [contenteditable]') || drag) return;
+  let data;
+  try { data = await fetchState(); } catch { return; }
+  if (!data || saving || removed.size) return;
+  adoptSpaces(data);
+  const ids = new Set(data.boards.map(b => b.id));
+  let changed = false;
+  for (const sb of data.boards) {
+    const b = boards.find(x => x.id === sb.id);
+    if (!b) { sb.open = sb.adding = null; sb.people = peopleOf(sb.space); boards.push(sb); lastSaved.set(sb.id, JSON.stringify(serialize(sb))); changed = true; continue; }
+    b.people = peopleOf(b.space);
+    if (b.version === sb.version || dirty.has(b.id)) continue;
+    adoptServerBoard(b, sb); lastSaved.set(b.id, JSON.stringify(serialize(b))); changed = true;
+  }
+  /* bacheche eliminate da altri (quelle nuove non ancora salvate restano) */
+  for (let i = boards.length - 1; i >= 0; i--) {
+    const b = boards[i];
+    if (!ids.has(b.id) && b.version && !dirty.has(b.id)) { boards.splice(i, 1); lastSaved.delete(b.id); changed = true; }
+  }
+  boards.sort((x, y) => (data.boards.findIndex(b => b.id === x.id) + 1 || 1e9) - (data.boards.findIndex(b => b.id === y.id) + 1 || 1e9));
+  if (changed || homeEl.hidden === false) rerender();
+}
+document.addEventListener('visibilitychange', refresh);
+setInterval(refresh, 20000);
 
 const $ = s => document.querySelector(s);
 const personOf = pid => state.people.find(p => p.id === pid);
@@ -1135,9 +1254,9 @@ function panelHTML(c) {
     case 'msg':
       return c.messages.length
         ? `<div class="msgs">${c.messages.map(m => {
-            const pid = m.me ? 'p-io' : state.people.find(p => p.name === m.name)?.id;
+            const pid = m.by || (m.me ? ME.email : null);
             return `<article class="msg ${m.me ? 'me' : ''}">
-              <header class="msg-head">${pid ? avatars([pid]) : ''}<b class="who">${esc(m.me ? 'Io' : m.name)}</b><time class="when">${fmtTime(m.at)}${m.edited ? ' · modificato' : ''}</time></header>
+              <header class="msg-head">${pid ? avatars([pid]) : ''}<b class="who">${esc(m.name)}</b><time class="when">${fmtTime(m.at)}${m.edited ? ' · modificato' : ''}</time></header>
               ${ui.editMsg === m.id
                 ? `<div class="msg-edit"><div class="rte">
                     <div class="rte-bar" role="toolbar" aria-label="Formattazione">${ui.linking === 'f-msgedit' ? linkInput() : rteBar({ headings: false })}</div>
@@ -1672,7 +1791,7 @@ sheetEl.addEventListener('submit', e => {
   e.preventDefault();
   const c = cardOf(state.open), ed = $('#f-msg');
   const html = cleanHTML(ed?.innerHTML); if (!c || !html) return;
-  c.messages.push({ id: id(), me: true, name: 'Io', html, at: Date.now() });
+  c.messages.push({ id: id(), by: ME.email, me: true, name: ME.name, html, at: Date.now() });
   ui.msgDraft = ''; ui.linking = false;
   renderSheet({ bottom: true }); placeCaretEnd($('#f-msg'));
 });
@@ -1772,8 +1891,12 @@ function urgentOf(b) {
 const BOARD_TINTS = ['Rosso', 'Arancio', 'Tiffany', 'Verde', 'Blu', 'Magenta'];
 const boardTint = b => Number.isInteger(b.color) ? b.color : [...b.id].reduce((n, ch) => n + ch.charCodeAt(0), 0) % 6;
 function renderHome() {
-  $('#home-empty').hidden = boards.length > 0;
-  $('#home-grid').innerHTML = boards.map(b => {
+  const sp = spaceOf(space), shown = boards.filter(b => b.space === space);
+  $('.home-title').textContent = spaces.length > 1 ? sp?.name || 'Bacheche' : 'Bacheche';
+  $('#home-empty').textContent = sp ? 'Nessuna bacheca. Creane una per il tuo primo progetto o cliente.' : 'Non fai ancora parte di nessuno spazio.';
+  $('#home-empty').hidden = shown.length > 0;
+  renderSpaceMenu();
+  $('#home-grid').innerHTML = shown.map(b => {
     const u = urgentOf(b);
     return `<article class="tile" role="button" tabindex="0" data-openboard="${b.id}" style="--bc: var(--bc-${boardTint(b)})">
       <div class="swatch" aria-hidden="true"></div>
@@ -1794,8 +1917,9 @@ function renderHome() {
         </div>` : ''}
       </div>
     </article>`;
-  }).join('') + `<button type="button" class="tile tile-new" data-newboard>${ICON.plus}Nuova bacheca</button>`;
+  }).join('') + (sp ? `<button type="button" class="tile tile-new" data-newboard>${ICON.plus}Nuova bacheca</button>` : '');
   const b = boards.find(x => x.id === homeUi.confirm);
+  if (homeUi.manage && sp) { renderSpaceSheet(sp); return; }
   $('#home-alert').innerHTML = b ? `<div class="alert-wrap fixed"><div class="alert" role="alertdialog" aria-modal="true" aria-labelledby="ha-t" aria-describedby="ha-d">
       <h3 id="ha-t">Eliminare “${esc(b.title)}”?</h3>
       <p id="ha-d">La bacheca, le sue colonne e tutte le schede verranno cancellate definitivamente.</p>
@@ -1803,6 +1927,73 @@ function renderHome() {
     </div></div>` : '';
   if (b) $('[data-homecancel]').focus();
 }
+/* Spazi: ognuno ha le sue bacheche e le sue persone. Chi amministra Flow li crea e invita
+   le persone per email; gli altri vedono solo gli spazi in cui sono stati invitati. */
+function renderSpaceMenu() {
+  $('#space-wrap').hidden = mode === 'local' || (spaces.length < 2 && !ME.admin);
+  $('#space-menu').innerHTML = `<p class="menu-head">Spazi</p>
+    ${spaces.map(x => `<button type="button" class="mi" role="menuitemradio" aria-checked="${x.id === space}" data-space="${x.id}"><span class="mk">${x.id === space ? ICON.tick : ''}</span><span class="vt"><b>${esc(x.name)}</b><small>${plural(x.people.length, '1 persona', 'persone')}</small></span></button>`).join('')}
+    ${ME.admin ? `<div class="menu-sep"></div>
+      ${spaceOf(space) ? `<button type="button" class="mi" data-spacemanage>Gestisci questo spazio</button>` : ''}
+      <button type="button" class="mi" data-spacenew>Nuovo spazio</button>` : ''}`;
+}
+function renderSpaceSheet(sp) {
+  const used = boards.some(b => b.space === sp.id);
+  $('#home-alert').innerHTML = `<div class="alert-wrap fixed"><div class="alert space" role="dialog" aria-modal="true" aria-labelledby="sp-t">
+    <h3 id="sp-t">Spazio</h3>
+    <div class="sp-body">
+      <input id="sp-name" class="sp-input" value="${esc(sp.name)}" aria-label="Nome dello spazio" enterkeyhint="done">
+      <p class="sp-label">Persone invitate</p>
+      <ul class="sp-list">${sp.members.map(e => `<li><span>${esc(e)}</span><button type="button" data-spaceremove="${esc(e)}">Rimuovi</button></li>`).join('') || '<li class="none">Nessuno, per ora.</li>'}</ul>
+      <form class="sp-add" id="sp-add"><input id="sp-email" class="sp-input" type="email" placeholder="email dell'account Google" aria-label="Email da invitare" autocomplete="off" enterkeyhint="send"><button type="submit">Invita</button></form>
+      <p class="sp-note">Le persone invitate entrano da flow-s3.vercel.app con “Accedi con Google” e vedono solo le bacheche di questo spazio. Gli amministratori sono presenti in tutti gli spazi.</p>
+    </div>
+    <div class="alert-actions"><button type="button" class="danger" data-spacedelete ${used ? 'disabled title="Prima sposta o elimina le sue bacheche"' : ''}>Elimina spazio</button><button type="button" class="strong" data-spaceclose>Fine</button></div>
+  </div></div>`;
+}
+async function spaceApi(method, path, body) {
+  try {
+    const r = await fetch('/api/spaces' + path, { method, headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) { toast(data.error || 'Operazione non riuscita.'); return false; }
+  } catch { toast('Connessione assente. Riprova tra poco.'); return false; }
+  const data = await fetchState().catch(() => null);
+  if (data) { adoptSpaces(data); boards.forEach(b => { b.people = peopleOf(b.space); }); }
+  return true;
+}
+const spaceBtn = $('#space-btn'), spaceMenu = $('#space-menu');
+spaceBtn.addEventListener('click', () => { spaceMenu.hidden = !spaceMenu.hidden; spaceBtn.setAttribute('aria-expanded', String(!spaceMenu.hidden)); });
+document.addEventListener('click', e => { if (!e.target.closest('#space-wrap')) { spaceMenu.hidden = true; spaceBtn.setAttribute('aria-expanded', 'false'); } });
+spaceMenu.addEventListener('click', async e => {
+  const t = e.target, pick = t.closest('[data-space]');
+  spaceMenu.hidden = true; spaceBtn.setAttribute('aria-expanded', 'false');
+  if (pick) { setSpace(pick.dataset.space); renderHome(); return; }
+  if (t.closest('[data-spacemanage]')) { homeUi.manage = true; renderHome(); return; }
+  if (t.closest('[data-spacenew]')) {
+    const sid = id();
+    if (await spaceApi('POST', '', { id: sid, name: 'Nuovo spazio' })) { setSpace(sid); homeUi.manage = true; renderHome(); const n = $('#sp-name'); n?.focus(); n?.select(); }
+  }
+});
+$('#home-alert').addEventListener('change', e => {
+  if (e.target.id === 'sp-name') spaceApi('PATCH', '/' + encodeURIComponent(space), { name: e.target.value }).then(ok => ok && renderSpaceMenu());
+});
+$('#home-alert').addEventListener('submit', async e => {
+  e.preventDefault();
+  const inp = $('#sp-email'), email = inp.value.trim().toLowerCase(), sp = spaceOf(space);
+  if (!sp || !inp.checkValidity() || !email) { inp.reportValidity(); return; }
+  if (await spaceApi('PATCH', '/' + encodeURIComponent(space), { members: [...sp.members, email] })) { renderHome(); $('#sp-email')?.focus(); }
+});
+$('#home-alert').addEventListener('click', async e => {
+  const t = e.target, sp = spaceOf(space);
+  if (!sp) return;
+  const rm = t.closest('[data-spaceremove]');
+  if (rm) { if (await spaceApi('PATCH', '/' + encodeURIComponent(space), { members: sp.members.filter(x => x !== rm.dataset.spaceremove) })) renderHome(); return; }
+  if (t.closest('[data-spaceclose]') || t.classList.contains('alert-wrap')) { homeUi.manage = false; $('#home-alert').innerHTML = ''; renderHome(); return; }
+  if (t.closest('[data-spacedelete]')) {
+    if (await spaceApi('DELETE', '/' + encodeURIComponent(space))) { homeUi.manage = false; $('#home-alert').innerHTML = ''; setSpace(spaces[0]?.id); renderHome(); }
+  }
+});
+
 function showHome() {
   if (state) { state.open = null; renderSheet(); }
   appEl.hidden = true; homeEl.hidden = false;
@@ -1829,7 +2020,7 @@ homeEl.addEventListener('click', e => {
   if (t.closest('[data-homecancel]')) { homeUi.confirm = null; renderHome(); return; }
   if (t.closest('[data-homeok]')) { boards.splice(boards.findIndex(b => b.id === homeUi.confirm), 1); removeBoard(homeUi.confirm); homeUi.confirm = null; renderHome(); return; }
   if (t.closest('[data-newboard]')) {
-    const b = makeBoard('Nuova bacheca'); b.people = PEOPLE; boards.push(b); openBoard(b);
+    const b = makeBoard('Nuova bacheca'); boards.push(b); openBoard(b);
     const inp = $('#board-title'); inp.focus(); inp.select();
     return;
   }
@@ -1837,7 +2028,7 @@ homeEl.addEventListener('click', e => {
   if (open && !t.closest('.tile-more')) openBoard(boards.find(b => b.id === open.dataset.openboard));
 });
 homeEl.addEventListener('keydown', e => {
-  if (e.key === 'Escape' && (homeUi.confirm || homeUi.menu)) { homeUi.confirm = homeUi.menu = null; renderHome(); return; }
+  if (e.key === 'Escape' && (homeUi.confirm || homeUi.menu || homeUi.manage)) { homeUi.confirm = homeUi.menu = null; homeUi.manage = false; $('#home-alert').innerHTML = ''; renderHome(); return; }
   const tile = e.target.closest('[data-openboard]');
   if (tile && e.target === tile && e.key === 'Enter') openBoard(boards.find(b => b.id === tile.dataset.openboard));
 });
