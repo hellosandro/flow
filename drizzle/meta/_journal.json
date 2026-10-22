@@ -50,6 +50,13 @@
       "when": 1792653756951,
       "tag": "0006_date_planning",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792668794279,
+      "tag": "0007_nomi_bacheche",
+      "breakpoints": true
     }
   ]
 }

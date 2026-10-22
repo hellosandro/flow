@@ -29,7 +29,7 @@ const owner = (who: string) => (who === OLD_ME ? admins()[0] || who : who);
 
 export type Person = { email: string; name: string; picture: string };
 export type Role = 'proprietario' | 'membro';
-export type UiSpace = { id: string; name: string; role: Role; people: Person[]; members: { email: string; role: Role }[] };
+export type UiSpace = { id: string; name: string; one: string; many: string; role: Role; people: Person[]; members: { email: string; role: Role }[] };
 
 const str = (v: unknown, max = 200_000) => (typeof v === 'string' ? v : '').slice(0, max);
 const arr = <T>(v: unknown): T[] => (Array.isArray(v) ? v : []);
@@ -108,7 +108,7 @@ export async function spacesFor(user: SessionUser): Promise<UiSpace[]> {
   return sps.map(sp => {
     const ms = members.filter(m => m.spaceId === sp.id);
     return {
-      id: sp.id, name: sp.nome, role: roleOf(mine.find(m => m.spaceId === sp.id)!.ruolo),
+      id: sp.id, name: sp.nome, one: sp.parola, many: sp.parole, role: roleOf(mine.find(m => m.spaceId === sp.id)!.ruolo),
       members: ms.map(m => ({ email: m.email, role: roleOf(m.ruolo) })),
       people: ms.map(m => person(m.email))
     };
@@ -274,14 +274,18 @@ export async function roleIn(user: SessionUser, spaceId: string) {
   return m ? m.ruolo : null;
 }
 
-/* Una sola operazione per richiesta: rinominare, invitare, rimuovere (o uscire), nominare o togliere un proprietario.
+/* Una sola operazione per richiesta: rinominare, scegliere come chiamare le bacheche, invitare, rimuovere (o uscire), nominare o togliere un proprietario.
    Uno spazio non resta mai senza proprietario. */
-export async function updateSpace(user: SessionUser, id: string, input: { name?: unknown; invite?: unknown; remove?: unknown; promote?: unknown; demote?: unknown }) {
+export async function updateSpace(user: SessionUser, id: string, input: { name?: unknown; terms?: { one?: unknown; many?: unknown }; invite?: unknown; remove?: unknown; promote?: unknown; demote?: unknown }) {
   const db = getDb();
   const role = await roleIn(user, id);
   const leaving = cleanEmail(input.remove) === user.email;
   if (role !== 'proprietario' && !(role && leaving)) return 'Solo il proprietario può gestire questo spazio.';
-  if (typeof input.name === 'string') {
+  if (input.terms && typeof input.terms === 'object') {
+    /* le due parole vanno insieme: se ne manca una si torna a Bacheca / Bacheche */
+    const one = str(input.terms.one, 40).trim(), many = str(input.terms.many, 40).trim();
+    await db.update(t.spaces).set(one && many ? { parola: one, parole: many } : { parola: '', parole: '' }).where(eq(t.spaces.id, id));
+  } else if (typeof input.name === 'string') {
     await db.update(t.spaces).set({ nome: str(input.name, 200).trim() || 'Senza nome' }).where(eq(t.spaces.id, id));
   } else if (input.invite !== undefined) {
     const email = cleanEmail(input.invite);
