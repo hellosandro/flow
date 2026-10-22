@@ -7,6 +7,9 @@ import { pgTable, text, real, boolean, date, timestamp, integer, primaryKey, ind
 export const spaces = pgTable('spaces', {
   id: text('id').primaryKey(),
   nome: text('nome').notNull(),
+  /* come lo spazio chiama le bacheche (es. Cantiere / Cantieri); vuoto = Bacheca / Bacheche */
+  parola: text('parola').notNull().default(''),
+  parole: text('parole').notNull().default(''),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
 });
 

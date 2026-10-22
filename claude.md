@@ -17,6 +17,7 @@ FLOW è un tool online in stile Trello, personale e con meno funzioni. Serve a g
 
 - Si entra con **"Accedi con Google"**, **su invito**. Può entrare: l'**amministratore** di Flow (email in `FLOW_ADMIN` su Vercel), chi è nell'elenco **Inviti a Flow** (lo gestisce l'amministratore dal menu Spazi) e chi è stato invitato in uno spazio.
 - **Spazi** (come gli spazi di lavoro di Trello): ogni bacheca appartiene a uno spazio. Al primo ingresso ognuno trova il suo **studio** ("Studio di …"), di cui è **proprietario**. Il proprietario rinomina lo spazio, invita e rimuove persone per email, nomina altri proprietari, elimina lo spazio quando è vuoto. I **membri** usano le bacheche e possono uscire dallo spazio. Chiunque può creare altri spazi.
+- **Nome delle bacheche**: nelle impostazioni dello spazio (Gestisci questo spazio) il proprietario sceglie come chiamarle: *Bacheche* (predefinito), *Progetti, Cantieri, Clienti, Commesse, Lavori* o una parola propria (singolare e plurale). La parola compare nel titolo della pagina iniziale, in "Aggiungi …", nel menu "…", nel tasto indietro e nel Planning. I testi evitano articoli e accordi ("il/la", "nuovo/nuova") così funzionano con qualsiasi parola; solo il predefinito resta "Nuova bacheca".
 - Ognuno vede **solo gli spazi di cui fa parte**: l'amministratore non vede gli studi degli altri (i dati però stanno nel suo database). Gli spazi nati prima dei ruoli passano all'amministratore come proprietario.
 - Le persone di uno spazio sono quelle proposte nel modulo *Membri*; i messaggi sono firmati con il nome dell'account Google, e ognuno può modificare o eliminare solo i propri.
 - Dopo il login, un cookie di sessione sicuro (httpOnly, firmato con `AUTH_SECRET`) mantiene l'accesso per 30 giorni su quel dispositivo.
@@ -140,7 +141,7 @@ Azioni sulle schede:
 ## 6. Modello dati
 
 ```
-spaces          id, nome, created_at
+spaces          id, nome, parola, parole (come chiamare le bacheche; vuote = Bacheca/Bacheche), created_at
 space_members   space_id, email, ruolo ('proprietario' | 'membro'), created_at
 inviti          email, created_at
 users           email, nome, foto, ultimo_accesso

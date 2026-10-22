@@ -564,6 +564,11 @@ button.pl-name { padding: 6px 0; }
 .alert.space h3 { text-align: center; }
 .sp-body { display: grid; gap: 8px; padding: 0 16px 14px; }
 .sp-input { width: 100%; font: var(--t-body); color: var(--label); background: var(--bg); border: .5px solid var(--sep); border-radius: 10px; padding: 10px 12px; }
+.sp-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.sp-chips button { font: var(--t-sub); padding: 6px 11px; border-radius: 99px; box-shadow: inset 0 0 0 .5px var(--sep); background: var(--surface); }
+.sp-chips button[aria-pressed="true"] { background: var(--label); color: var(--surface); box-shadow: none; }
+[data-skin="carta"] .sp-chips button { border-radius: 0; font: 500 11px/1.2 var(--font); letter-spacing: .12em; text-transform: uppercase; box-shadow: inset 0 0 0 1px var(--rule); padding: 7px 10px; }
+.sp-terms { margin-top: 4px; }
 .alert .sp-label { font: var(--t-cap); color: var(--label-2); margin: 8px 0 0; }
 #space-menu { min-width: 230px; }
 #space-menu .mi { white-space: nowrap; }
@@ -877,7 +882,7 @@ button.pl-name { padding: 6px 0; }
   <header class="top">
     <div class="nav"><button class="back" type="button" id="plan-back"><svg class="i" viewBox="0 0 16 16"><path d="M10 3 5 8l5 5"/></svg>Bacheche</button></div>
     <h1 class="home-title">Planning</h1>
-    <p class="home-empty" id="plan-empty" hidden>Nessuna bacheca in questo spazio.</p>
+    <p class="home-empty" id="plan-empty" hidden>Questo spazio è ancora vuoto.</p>
   </header>
   <div class="plan-tools"><span class="plan-count" id="plan-count"></span><button type="button" class="logout" id="plan-all">Apri tutti</button></div>
   <div class="plan-wrap" id="plan-wrap"></div>
@@ -901,7 +906,7 @@ button.pl-name { padding: 6px 0; }
         </div>
       </div>
     </div>
-    <h1 style="margin:0"><input id="board-title" class="board-title" aria-label="Titolo della bacheca" spellcheck="false"></h1>
+    <h1 style="margin:0"><input id="board-title" class="board-title" aria-label="Titolo" spellcheck="false"></h1>
   </header>
   <div class="seg-wrap"><nav class="seg" id="seg" aria-label="Colonne"></nav></div>
   <main class="board" id="board"></main>
@@ -967,10 +972,19 @@ const serialize = ({ open, adding, people, version, by, ...rest }) => rest;
 
 /* Chi sta usando Flow e gli spazi che vede. Senza server (anteprima) c'è solo "Io". */
 let ME = { email: 'io', name: 'Io', picture: '', admin: true };
-let spaces = [{ id: 'principale', name: 'Il mio spazio', people: [{ email: 'io', name: 'Io', picture: '' }] }];
+let spaces = [{ id: 'principale', name: 'Il mio spazio', one: '', many: '', people: [{ email: 'io', name: 'Io', picture: '' }] }];
 let space = 'principale';
 try { space = localStorage.getItem('flow-space') || space; } catch {}
 const spaceOf = sid => spaces.find(x => x.id === sid);
+/* Come lo spazio chiama le bacheche: Bacheca / Bacheche, oppure Progetto / Progetti, Cantiere / Cantieri… */
+const TERM_PRESETS = [['Bacheca', 'Bacheche'], ['Progetto', 'Progetti'], ['Cantiere', 'Cantieri'], ['Cliente', 'Clienti'], ['Commessa', 'Commesse'], ['Lavoro', 'Lavori']];
+function terms(sid = space) {
+  const sp = spaceOf(sid);
+  return sp?.one && sp?.many ? { one: sp.one, many: sp.many, custom: true } : { one: 'Bacheca', many: 'Bacheche', custom: false };
+}
+const lower = w => w.charAt(0).toLocaleLowerCase('it') + w.slice(1);
+/* "Nuova bacheca" resta così; con altre parole si evita l'accordo (nuovo/nuova): "Aggiungi cantiere" */
+const newBoardLabel = () => { const tm = terms(); return tm.custom ? `Aggiungi ${lower(tm.one)}` : 'Nuova bacheca'; };
 const initialsOf = name => (name.trim().split(/\s+/).slice(0, 2).map(w => w[0]).join('') || '?').toUpperCase();
 function peopleOf(sid) {
   return (spaceOf(sid)?.people || []).map(p => ({ id: p.email, name: p.name, role: p.email === ME.email ? 'Tu' : p.email, initials: initialsOf(p.name), me: p.email === ME.email }));
@@ -1058,11 +1072,11 @@ async function flush({ keepalive = false } = {}) {
         adoptServerBoard(b, { ...data.board, ...merged });
         lastSaved.set(bid, JSON.stringify(serialize(data.board)));
         if (lastSaved.get(bid) !== JSON.stringify(serialize(b))) { dirty.add(bid); again = true; }
-        toast(`${data.board.by || 'Qualcuno'} ha appena modificato questa bacheca: ho unito le modifiche.`);
+        toast(`${data.board.by || 'Qualcuno'} ha appena modificato “${data.board.title}”: ho unito le modifiche.`);
         rerender();
         continue;
       }
-      if (r.status === 403) { toast(data.error || 'Non hai accesso a questa bacheca.'); continue; }
+      if (r.status === 403) { toast(data.error || 'Non hai accesso a questi dati.'); continue; }
       if (!r.ok) throw new Error(r.status);
       if (b && method === 'PUT') {
         b.version = data.version;
@@ -1403,7 +1417,7 @@ function panelHTML(c) {
             <button type="button" class="lab-del" data-labdel="${l.id}" aria-label="Elimina etichetta" title="Elimina">${ICON.x}</button>
           </div>`).join('')}
           <button type="button" class="lab-add" data-labadd>${ICON.plus}Nuova etichetta</button>
-          <p class="lab-note">Le etichette valgono per tutte le schede della bacheca.</p>
+          <p class="lab-note">Le etichette valgono per tutte le schede di “${esc(state.title)}”.</p>
           <button type="button" class="desc-hint" data-labdone>Fine</button>
         </div>`;
       return `<div class="chips">${state.labels.map(l => `<button type="button" class="chip" style="--c:${l.color}" aria-pressed="${c.labels.includes(l.id)}" data-label="${l.id}">${esc(l.name)}</button>`).join('')}</div>
@@ -2022,8 +2036,9 @@ const BOARD_TINTS = TINTS;
 const boardTint = b => Number.isInteger(b.color) && b.color < BOARD_TINTS.length ? b.color : [...b.id].reduce((n, ch) => n + ch.charCodeAt(0), 0) % BOARD_TINTS.length;
 function renderHome() {
   const sp = spaceOf(space), shown = boards.filter(b => b.space === space);
-  $('.home-title').textContent = spaces.length > 1 ? sp?.name || 'Bacheche' : 'Bacheche';
-  $('#home-empty').textContent = sp ? 'Nessuna bacheca. Creane una per il tuo primo progetto o cliente.' : 'Non fai ancora parte di nessuno spazio.';
+  const tm = terms();
+  $('.home-title').textContent = spaces.length > 1 ? sp?.name || tm.many : tm.many;
+  $('#home-empty').textContent = sp ? `Qui non c’è ancora niente. Tocca “${newBoardLabel()}” per iniziare.` : 'Non fai ancora parte di nessuno spazio.';
   $('#home-empty').hidden = shown.length > 0;
   renderSpaceMenu();
   $('#home-grid').innerHTML = shown.map(b => {
@@ -2040,7 +2055,7 @@ function renderHome() {
         ${homeUi.menu === b.id ? `<div class="menu right card-menu" role="menu">
           <button type="button" class="mi sub-open" data-boardcolors="${b.id}" aria-haspopup="menu">Cambia colore${ICON.chevr}</button>
           <button type="button" class="mi" data-boarddates="${b.id}">Imposta date</button><div class="menu-sep"></div>
-          <button type="button" class="mi danger" data-delboard="${b.id}">Elimina bacheca</button></div>` : ''}
+          <button type="button" class="mi danger" data-delboard="${b.id}">Elimina ${esc(lower(tm.one))}</button></div>` : ''}
         ${homeUi.menu === 'c:' + b.id ? `<div class="menu right card-menu" role="menu">
           <button type="button" class="mi sub-back" data-tilemore="${b.id}">${ICON.chevl}Colore</button>
           <div class="menu-sep"></div>
@@ -2048,7 +2063,7 @@ function renderHome() {
         </div>` : ''}
       </div>
     </article>`;
-  }).join('') + (sp ? `<button type="button" class="tile tile-new" data-newboard>${ICON.plus}Nuova bacheca</button>` : '');
+  }).join('') + (sp ? `<button type="button" class="tile tile-new" data-newboard>${ICON.plus}${esc(newBoardLabel())}</button>` : '');
   const b = boards.find(x => x.id === homeUi.confirm);
   const dated = homeUi.dates && boards.find(x => x.id === homeUi.dates);
   if (dated) { $('#home-alert').innerHTML = datesEditorHTML(dated); return; }
@@ -2056,7 +2071,7 @@ function renderHome() {
   if (homeUi.manage && sp) { renderSpaceSheet(sp); return; }
   $('#home-alert').innerHTML = b ? `<div class="alert-wrap fixed"><div class="alert" role="alertdialog" aria-modal="true" aria-labelledby="ha-t" aria-describedby="ha-d">
       <h3 id="ha-t">Eliminare “${esc(b.title)}”?</h3>
-      <p id="ha-d">La bacheca, le sue colonne e tutte le schede verranno cancellate definitivamente.</p>
+      <p id="ha-d">Le sue colonne e tutte le schede verranno cancellate definitivamente.</p>
       <div class="alert-actions"><button type="button" class="strong" data-homecancel>Annulla</button><button type="button" class="danger" data-homeok>Elimina</button></div>
     </div></div>` : '';
   if (b) $('[data-homecancel]').focus();
@@ -2090,16 +2105,26 @@ function renderSpaceSheet(sp) {
   $('#home-alert').innerHTML = `<div class="alert-wrap fixed"><div class="alert space" role="dialog" aria-modal="true" aria-labelledby="sp-t">
     <h3 id="sp-t">${owner ? 'Spazio' : esc(sp.name)}</h3>
     <div class="sp-body">
-      ${owner ? `<input id="sp-name" class="sp-input" value="${esc(sp.name)}" aria-label="Nome dello spazio" enterkeyhint="done">` : ''}
+      ${owner ? `<input id="sp-name" class="sp-input" value="${esc(sp.name)}" aria-label="Nome dello spazio" enterkeyhint="done">
+      <p class="sp-label">Come chiamate le bacheche?</p>
+      ${termsChooser(sp)}` : ''}
       <p class="sp-label">Persone</p>
       <ul class="sp-list">${sp.members.map(row).join('')}</ul>
       ${owner ? `<form class="sp-add" id="sp-add"><input id="sp-email" class="sp-input" type="email" placeholder="email dell'account Google" aria-label="Email da invitare" autocomplete="off" enterkeyhint="send"><button type="submit">Invita</button></form>
-      <p class="sp-note">Le persone invitate entrano da flow-s3.vercel.app con “Accedi con Google” e vedono le bacheche di questo spazio.</p>` : ''}
+      <p class="sp-note">Le persone invitate entrano da flow-s3.vercel.app con “Accedi con Google” e vedono tutto ciò che c’è in questo spazio.</p>` : ''}
     </div>
     <div class="alert-actions">${owner
-      ? `<button type="button" class="danger" data-spacedelete ${used ? 'disabled title="Prima elimina le sue bacheche"' : ''}>Elimina spazio</button>`
+      ? `<button type="button" class="danger" data-spacedelete ${used ? 'disabled title="Prima svuota lo spazio"' : ''}>Elimina spazio</button>`
       : `<button type="button" class="danger" data-spaceremove="${esc(ME.email)}">Esci dallo spazio</button>`}<button type="button" class="strong" data-spaceclose>Fine</button></div>
   </div></div>`;
+}
+function termsChooser(sp) {
+  const cur = TERM_PRESETS.findIndex(([o, m]) => (sp.one || 'Bacheca') === o && (sp.many || 'Bacheche') === m);
+  const other = homeUi.customTerms || cur < 0;
+  return `<div class="sp-chips" role="group" aria-label="Come chiamate le bacheche">
+      ${TERM_PRESETS.map(([, m], i) => `<button type="button" aria-pressed="${!other && cur === i}" data-terms="${i}">${m}</button>`).join('')}
+      <button type="button" aria-pressed="${other}" data-terms="altro">Altro…</button></div>
+    ${other ? `<div class="pd-grid sp-terms"><label>Una<input id="sp-one" class="sp-input" value="${esc(sp.one || '')}" placeholder="Pratica" maxlength="40"></label><label>Tante<input id="sp-many" class="sp-input" value="${esc(sp.many || '')}" placeholder="Pratiche" maxlength="40"></label></div>` : ''}`;
 }
 let invites = [];
 function renderInvites() {
@@ -2136,7 +2161,7 @@ async function spaceApi(method, path, body) {
   }
   return true;
 }
-const closeSheetHome = () => { homeUi.manage = homeUi.invites = false; homeUi.dates = null; $('#home-alert').innerHTML = ''; renderHome(); };
+const closeSheetHome = () => { homeUi.manage = homeUi.invites = homeUi.customTerms = false; homeUi.dates = null; $('#home-alert').innerHTML = ''; renderHome(); };
 const spaceBtn = $('#space-btn'), spaceMenu = $('#space-menu');
 spaceBtn.addEventListener('click', () => { spaceMenu.hidden = !spaceMenu.hidden; spaceBtn.setAttribute('aria-expanded', String(!spaceMenu.hidden)); });
 document.addEventListener('click', e => { if (!e.target.closest('#space-wrap')) { spaceMenu.hidden = true; spaceBtn.setAttribute('aria-expanded', 'false'); } });
@@ -2153,6 +2178,11 @@ spaceMenu.addEventListener('click', async e => {
 });
 $('#home-alert').addEventListener('change', e => {
   if (e.target.id === 'sp-name') spaceApi('PATCH', '/' + encodeURIComponent(space), { name: e.target.value }).then(ok => ok && renderSpaceMenu());
+  /* parole scelte da sé: si salvano quando ci sono tutte e due */
+  if (e.target.id === 'sp-one' || e.target.id === 'sp-many') {
+    const one = $('#sp-one').value.trim(), many = $('#sp-many').value.trim();
+    if (one && many) spaceApi('PATCH', '/' + encodeURIComponent(space), { terms: { one, many } }).then(ok => { if (ok) { renderHome(); } });
+  }
 });
 $('#home-alert').addEventListener('submit', async e => {
   e.preventDefault();
@@ -2168,6 +2198,14 @@ $('#home-alert').addEventListener('click', async e => {
   const inv = t.closest('[data-inviteremove]');
   if (inv) { if (await inviteApi('DELETE', { email: inv.dataset.inviteremove })) renderHome(); return; }
   const path = '/' + encodeURIComponent(space);
+  const tp = t.closest('[data-terms]');
+  if (tp) {
+    if (tp.dataset.terms === 'altro') { homeUi.customTerms = true; renderHome(); $('#sp-one')?.focus(); return; }
+    const i = +tp.dataset.terms, [one, many] = i ? TERM_PRESETS[i] : ['', ''];
+    homeUi.customTerms = false;
+    if (await spaceApi('PATCH', path, { terms: { one, many } })) renderHome();
+    return;
+  }
   const rm = t.closest('[data-spaceremove]');
   if (rm) {
     const leaving = rm.dataset.spaceremove === ME.email;
@@ -2198,7 +2236,8 @@ function planPeriod(b) {
   return { start: jobs.map(c => c.start || c.due).sort()[0], end: jobs.map(c => c.due).sort().at(-1), set: false };
 }
 function renderPlanning() {
-  const list = boards.filter(b => b.space === space);
+  const list = boards.filter(b => b.space === space), tm = terms();
+  $('#plan-back').lastChild.textContent = tm.many;
   $('#plan-empty').hidden = list.length > 0;
   const rows = list.map(b => ({ b, p: planPeriod(b), jobs: planJobs(b) }))
     .sort((x, y) => !x.p - !y.p || (x.p && y.p ? x.p.start.localeCompare(y.p.start) : 0));
@@ -2211,7 +2250,7 @@ function renderPlanning() {
   const pct = iso => ((Date.parse(iso) - Date.parse(r0)) / span) * 100;
   const wpct = (a, b) => ((Date.parse(b) - Date.parse(a) + 864e5) / span) * 100; /* la fine è inclusa */
   const range = p => `${fmtShort(p.start)} – ${fmtShort(p.end)}${p.end.slice(0, 4) !== today.slice(0, 4) ? ' ' + p.end.slice(0, 4) : ''}`;
-  const head = `<div class="pl-row pl-head"><div class="pl-label">Cantiere</div><div class="pl-track">${months.map(m =>
+  const head = `<div class="pl-row pl-head"><div class="pl-label">${esc(tm.one)}</div><div class="pl-track">${months.map(m =>
     `<div class="pl-month" style="left:${pct(m)}%">${MONTHS_IT[+m.slice(5, 7) - 1]}${m.slice(5, 7) === '01' ? ' ' + m.slice(0, 4) : ''}</div>`).join('')}</div></div>`;
   let body = '';
   for (const { b, p, jobs } of rows) {
@@ -2219,7 +2258,7 @@ function renderPlanning() {
     const style = `--c: var(--bc-${tint}); --on: ${tint < LIGHT_TINTS ? '#1E1E1E' : '#FFFFFF'}`;
     body += `<div class="pl-row pl-site" style="${style}">
       <div class="pl-label"><button type="button" class="pl-chev" data-plantoggle="${b.id}" aria-expanded="${open}" ${jobs.length ? '' : 'disabled'} aria-label="${open ? 'Chiudi' : 'Apri'} le schede di ${esc(b.title)}"><svg class="i" viewBox="0 0 16 16"><path d="M6 3.5 10.5 8 6 12.5"/></svg></button>
-        <span class="pl-name"><button type="button" data-planboard="${b.id}" title="Apri la bacheca"><b>${esc(b.title)}</b></button>
+        <span class="pl-name"><button type="button" data-planboard="${b.id}" title="Apri"><b>${esc(b.title)}</b></button>
         <button type="button" class="pl-dates ${p?.set ? '' : 'empty-dates'}" data-plandates="${b.id}">${p?.set ? range(p) : 'Aggiungi date'}</button></span></div>
       <div class="pl-track">${p
         ? `<button type="button" class="pl-bar ${p.set ? '' : 'guess'}" data-plandates="${b.id}" style="left:${pct(p.start)}%;width:${wpct(p.start, p.end)}%" title="${esc(b.title)} · ${range(p)}${p.set ? '' : ' (dalle schede)'}">${esc(b.title)}</button>`
@@ -2237,7 +2276,7 @@ function renderPlanning() {
   const lines = months.map(m => `<div class="pl-grid" style="left:${pct(m)}%"></div>`).join('');
   $('#plan-wrap').innerHTML = list.length ? `<div class="pl" style="--months:${months.length}">${head}<div style="position:relative">${body}
     <div class="pl-ov" style="z-index:1">${lines}</div><div class="pl-ov" style="z-index:3"><div class="pl-today" style="left:${pct(today)}%"><span>Oggi</span></div></div></div></div>` : '';
-  $('#plan-count').textContent = list.length ? plural(list.length, '1 cantiere', 'cantieri') : '';
+  $('#plan-count').textContent = list.length ? plural(list.length, '1 ' + lower(tm.one), lower(tm.many)) : '';
   const openable = rows.filter(x => x.jobs.length);
   $('#plan-all').hidden = !openable.length;
   $('#plan-all').textContent = openable.length && openable.every(x => planUi.open.has(x.b.id)) ? 'Chiudi tutti' : 'Apri tutti';
@@ -2254,7 +2293,7 @@ function datesEditorHTML(b) {
     <h3 id="pd-t">Date di “${esc(b.title)}”</h3>
     <div class="sp-body">
       <div class="pd-grid"><label>Inizio<input type="date" id="pd-start" class="sp-input" value="${b.start || ''}"></label><label>Fine<input type="date" id="pd-end" class="sp-input" value="${b.end || ''}"></label></div>
-      <p class="sp-note">Sono le date di tutto il cantiere: fanno la barra colorata del Planning. Le date delle singole lavorazioni si mettono nelle schede.</p>
+      <p class="sp-note">Fanno la barra colorata nel Planning. Le date delle singole attività si mettono nelle schede.</p>
     </div>
     <div class="alert-actions"><button type="button" class="danger" data-pdclear ${b.start || b.end ? '' : 'disabled'}>Togli le date</button><button type="button" class="strong" data-pdsave>Fatto</button></div>
   </div></div>`;
@@ -2311,7 +2350,7 @@ function openBoard(b) {
   state = b; homeUi.menu = null;
   homeEl.hidden = true; planEl.hidden = true; appEl.hidden = false;
   /* la freccia in alto riporta da dove si è arrivati: bacheche o planning */
-  $('#board-back').lastChild.textContent = backTo === 'plan' ? 'Planning' : 'Bacheche';
+  $('#board-back').lastChild.textContent = backTo === 'plan' ? 'Planning' : terms(b.space).many;
   boardEl.scrollLeft = 0;
   renderBoard();
 }
@@ -2337,7 +2376,7 @@ homeEl.addEventListener('click', e => {
   if (t.closest('[data-homecancel]')) { homeUi.confirm = null; renderHome(); return; }
   if (t.closest('[data-homeok]')) { boards.splice(boards.findIndex(b => b.id === homeUi.confirm), 1); removeBoard(homeUi.confirm); homeUi.confirm = null; renderHome(); return; }
   if (t.closest('[data-newboard]')) {
-    const b = makeBoard('Nuova bacheca'); boards.push(b); openBoard(b);
+    const tm = terms(), b = makeBoard(tm.custom ? tm.one : 'Nuova bacheca'); boards.push(b); openBoard(b);
     const inp = $('#board-title'); inp.focus(); inp.select();
     return;
   }
