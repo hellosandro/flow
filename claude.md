@@ -97,7 +97,7 @@ Azioni sulle schede:
 ### 3.4 Planning
 
 - Dalla pagina iniziale, voce **Planning** in alto: una pagina per tutto lo spazio, semplice come uno schema su carta o in Excel. **Mesi in orizzontale, cantieri (bacheche) in verticale**, una barra colorata per cantiere (colore della bacheca) e una linea rossa per oggi. Niente colonne né stati.
-- Le **date del cantiere** (Inizio e Fine della bacheca) si scrivono qui, toccando le date sotto il nome, la barra o "+ Aggiungi date". Se una bacheca non ha date ma ha schede con date, compare solo il contorno del periodo coperto dalle schede.
+- Le **date del cantiere** (Inizio e Fine della bacheca) si scrivono qui, toccando le date sotto il nome, la barra o "+ Aggiungi date", oppure dalla pagina iniziale con il menu "…" della bacheca → *Imposta date*. Se una bacheca non ha date ma ha schede con date, compare solo il contorno del periodo coperto dalle schede.
 - La **freccia** accanto al cantiere apre sotto le sue schede con date: **barre** per quelle con Inizio e Fine, **rombi** per quelle con la sola Fine. Toccando il nome del cantiere si apre la bacheca, toccando una scheda si apre la scheda; il tasto in alto a sinistra riporta al Planning. *Apri tutti / Chiudi tutti* in alto a destra.
 - Nella scheda il modulo **Date** (ex Scadenza) ha **Inizio** (facoltativo) e **Fine** affiancati; la Fine è la scadenza di sempre, con gli stessi avvisi.
 

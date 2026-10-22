@@ -2005,7 +2005,7 @@ sheetEl.addEventListener('keydown', e => {
 });
 
 /* Pagina iniziale: l'elenco delle bacheche */
-const homeEl = $('#home'), appEl = $('#app'), homeUi = { menu: null, confirm: null, manage: false, invites: false };
+const homeEl = $('#home'), appEl = $('#app'), homeUi = { menu: null, confirm: null, manage: false, invites: false, dates: null };
 function urgentOf(b) {
   let late = 0, soon = 0;
   for (const c of b.cards) {
@@ -2038,7 +2038,8 @@ function renderHome() {
       <div class="more-wrap tile-more">
         <button class="icon-btn" type="button" data-tilemore="${b.id}" aria-label="Altre azioni" aria-expanded="${homeUi.menu === b.id}">${ICON.more}</button>
         ${homeUi.menu === b.id ? `<div class="menu right card-menu" role="menu">
-          <button type="button" class="mi sub-open" data-boardcolors="${b.id}" aria-haspopup="menu">Cambia colore${ICON.chevr}</button><div class="menu-sep"></div>
+          <button type="button" class="mi sub-open" data-boardcolors="${b.id}" aria-haspopup="menu">Cambia colore${ICON.chevr}</button>
+          <button type="button" class="mi" data-boarddates="${b.id}">Imposta date</button><div class="menu-sep"></div>
           <button type="button" class="mi danger" data-delboard="${b.id}">Elimina bacheca</button></div>` : ''}
         ${homeUi.menu === 'c:' + b.id ? `<div class="menu right card-menu" role="menu">
           <button type="button" class="mi sub-back" data-tilemore="${b.id}">${ICON.chevl}Colore</button>
@@ -2049,6 +2050,8 @@ function renderHome() {
     </article>`;
   }).join('') + (sp ? `<button type="button" class="tile tile-new" data-newboard>${ICON.plus}Nuova bacheca</button>` : '');
   const b = boards.find(x => x.id === homeUi.confirm);
+  const dated = homeUi.dates && boards.find(x => x.id === homeUi.dates);
+  if (dated) { $('#home-alert').innerHTML = datesEditorHTML(dated); return; }
   if (homeUi.invites) { renderInvites(); return; }
   if (homeUi.manage && sp) { renderSpaceSheet(sp); return; }
   $('#home-alert').innerHTML = b ? `<div class="alert-wrap fixed"><div class="alert" role="alertdialog" aria-modal="true" aria-labelledby="ha-t" aria-describedby="ha-d">
@@ -2133,7 +2136,7 @@ async function spaceApi(method, path, body) {
   }
   return true;
 }
-const closeSheetHome = () => { homeUi.manage = homeUi.invites = false; $('#home-alert').innerHTML = ''; renderHome(); };
+const closeSheetHome = () => { homeUi.manage = homeUi.invites = false; homeUi.dates = null; $('#home-alert').innerHTML = ''; renderHome(); };
 const spaceBtn = $('#space-btn'), spaceMenu = $('#space-menu');
 spaceBtn.addEventListener('click', () => { spaceMenu.hidden = !spaceMenu.hidden; spaceBtn.setAttribute('aria-expanded', String(!spaceMenu.hidden)); });
 document.addEventListener('click', e => { if (!e.target.closest('#space-wrap')) { spaceMenu.hidden = true; spaceBtn.setAttribute('aria-expanded', 'false'); } });
@@ -2241,16 +2244,20 @@ function renderPlanning() {
   renderPlanEditor();
   return pct;
 }
+/* finestrella delle date del cantiere: si apre dal Planning e dal menu "…" della bacheca */
 function renderPlanEditor() {
   const b = boards.find(x => x.id === planUi.edit);
-  $('#plan-alert').innerHTML = b ? `<div class="alert-wrap fixed"><div class="alert space" role="dialog" aria-modal="true" aria-labelledby="pd-t">
+  $('#plan-alert').innerHTML = b ? datesEditorHTML(b) : '';
+}
+function datesEditorHTML(b) {
+  return `<div class="alert-wrap fixed"><div class="alert space" role="dialog" aria-modal="true" aria-labelledby="pd-t">
     <h3 id="pd-t">Date di “${esc(b.title)}”</h3>
     <div class="sp-body">
       <div class="pd-grid"><label>Inizio<input type="date" id="pd-start" class="sp-input" value="${b.start || ''}"></label><label>Fine<input type="date" id="pd-end" class="sp-input" value="${b.end || ''}"></label></div>
       <p class="sp-note">Sono le date di tutto il cantiere: fanno la barra colorata del Planning. Le date delle singole lavorazioni si mettono nelle schede.</p>
     </div>
     <div class="alert-actions"><button type="button" class="danger" data-pdclear ${b.start || b.end ? '' : 'disabled'}>Togli le date</button><button type="button" class="strong" data-pdsave>Fatto</button></div>
-  </div></div>` : '';
+  </div></div>`;
 }
 function saveBoardDates(b, start, end) {
   if (start && end && start > end) [start, end] = [end, start];
@@ -2313,6 +2320,13 @@ homeEl.addEventListener('click', e => {
   if (homeUi.menu && !t.closest('.tile-more')) { homeUi.menu = null; renderHome(); }
   const more = t.closest('[data-tilemore]');
   if (more) { homeUi.menu = homeUi.menu === more.dataset.tilemore && !more.classList.contains('sub-back') ? null : more.dataset.tilemore; renderHome(); return; }
+  const bd = t.closest('[data-boarddates]');
+  if (bd) { homeUi.menu = null; homeUi.dates = bd.dataset.boarddates; renderHome(); $('#pd-start')?.focus(); return; }
+  const db = homeUi.dates && boards.find(x => x.id === homeUi.dates);
+  if (db && t.closest('[data-pdsave], [data-pdclear]')) {
+    if (t.closest('[data-pdsave]')) saveBoardDates(db, $('#pd-start').value, $('#pd-end').value); else saveBoardDates(db, null, null);
+    closeSheetHome(); return;
+  }
   const bcs = t.closest('[data-boardcolors]');
   if (bcs) { homeUi.menu = 'c:' + bcs.dataset.boardcolors; renderHome(); return; }
   /* il sottomenu resta aperto: si possono provare più colori di seguito */
@@ -2331,7 +2345,8 @@ homeEl.addEventListener('click', e => {
   if (open && !t.closest('.tile-more')) openBoard(boards.find(b => b.id === open.dataset.openboard));
 });
 homeEl.addEventListener('keydown', e => {
-  if (e.key === 'Escape' && (homeUi.confirm || homeUi.menu || homeUi.manage || homeUi.invites)) { homeUi.confirm = homeUi.menu = null; closeSheetHome(); return; }
+  if (e.key === 'Enter' && homeUi.dates && e.target.closest?.('#home-alert input')) { $('[data-pdsave]')?.click(); return; }
+  if (e.key === 'Escape' && (homeUi.confirm || homeUi.menu || homeUi.manage || homeUi.invites || homeUi.dates)) { homeUi.confirm = homeUi.menu = null; closeSheetHome(); return; }
   const tile = e.target.closest('[data-openboard]');
   if (tile && e.target === tile && e.key === 'Enter') openBoard(boards.find(b => b.id === tile.dataset.openboard));
 });
