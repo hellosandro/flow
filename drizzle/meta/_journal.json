@@ -43,6 +43,13 @@
       "when": 1792501678131,
       "tag": "0005_studi_su_invito",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792653756951,
+      "tag": "0006_date_planning",
+      "breakpoints": true
     }
   ]
 }

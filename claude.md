@@ -94,6 +94,13 @@ Azioni sulle schede:
 - creare, modificare, eliminare;
 - trascinare tra colonne e riordinare dentro la colonna, anche su telefono (tenendo premuta la scheda); in alternativa, "Sposta in" dal menu "…" della scheda aperta.
 
+### 3.4 Planning
+
+- Dalla pagina iniziale, voce **Planning** in alto: una pagina per tutto lo spazio, semplice come uno schema su carta o in Excel. **Mesi in orizzontale, cantieri (bacheche) in verticale**, una barra colorata per cantiere (colore della bacheca) e una linea rossa per oggi. Niente colonne né stati.
+- Le **date del cantiere** (Inizio e Fine della bacheca) si scrivono qui, toccando le date sotto il nome, la barra o "+ Aggiungi date". Se una bacheca non ha date ma ha schede con date, compare solo il contorno del periodo coperto dalle schede.
+- La **freccia** accanto al cantiere apre sotto le sue schede con date: **barre** per quelle con Inizio e Fine, **rombi** per quelle con la sola Fine. Toccando il nome del cantiere si apre la bacheca, toccando una scheda si apre la scheda; il tasto in alto a sinistra riporta al Planning. *Apri tutti / Chiudi tutti* in alto a destra.
+- Nella scheda il modulo **Date** (ex Scadenza) ha **Inizio** (facoltativo) e **Fine** affiancati; la Fine è la scadenza di sempre, con gli stessi avvisi.
+
 ## 4. Design
 
 - Minimalismo e tipografia curata sono il centro del progetto.
@@ -137,10 +144,10 @@ spaces          id, nome, created_at
 space_members   space_id, email, ruolo ('proprietario' | 'membro'), created_at
 inviti          email, created_at
 users           email, nome, foto, ultimo_accesso
-boards          id, space_id, titolo, colore (0–5, opzionale), versione, modificato_da, posizione, created_at
+boards          id, space_id, titolo, colore (0–7, opzionale), inizio, fine (date, opzionali), versione, modificato_da, posizione, created_at
 columns         id, board_id, titolo, tipo ('in_corso' | 'in_revisione' | 'fatto' | 'variabile'), posizione
 labels          id, board_id, nome, colore
-cards           id, column_id, board_id, titolo, descrizione, colore (0–5, opzionale), scadenza (date), moduli_visibili (elenco), posizione, created_at, updated_at
+cards           id, column_id, board_id, titolo, descrizione, colore (0–7, opzionale), inizio (date, opzionale), scadenza (date), moduli_visibili (elenco), posizione, created_at, updated_at
 card_labels     card_id, label_id
 card_members    card_id, membro
 messages        id, card_id, autore (email), testo, modificato, created_at
@@ -196,7 +203,6 @@ Il login con Google, gli studi su invito e gli spazi (sezione 2) coprono già il
 ## 11. Idee per il futuro
 
 - **Palette per studio**: nelle impostazioni dello spazio ogni studio sceglie la sua palette (tra alcune proposte o creandone una), usata per bacheche e schede al posto di quella predefinita (sezione 4).
-- **Planning** (anteprima approvata nell'impostazione, non ancora costruita): una pagina per tutto lo spazio con i mesi in orizzontale e i cantieri (bacheche) in verticale, una barra per cantiere dal suo Inizio alla sua Fine (date della bacheca). Una freccia apre il cantiere e mostra le schede con date: barre per le lavorazioni (Inizio e Fine), rombi per le scadenze di un giorno. Il modulo Scadenza diventa *Date* con Inizio facoltativo. Niente colonne o stati nel planning: deve restare semplice come uno schema su carta o in Excel.
 - **Imprese**: elenco di imprese e fornitori per spazio e modulo *Impresa* nella scheda, per vedere nel planning quando un'impresa è già occupata su un altro cantiere (sovrapposizioni in rosso).
 - **Inviti per email**: un pulsante che prepara la mail di invito nell'app di posta, oppure l'invio automatico con un servizio come Resend.
 - **Notifiche**: avviso quando qualcuno commenta una scheda di cui si è membri; allora *Commenti* potrà chiamarsi *Discussione*.

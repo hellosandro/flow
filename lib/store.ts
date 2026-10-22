@@ -7,7 +7,7 @@ import * as t from './schema';
 /* Forma dei dati usata dall'interfaccia (ui/flow.html). Il server la scompone nelle tabelle
    e la ricompone in lettura: l'interfaccia salva una bacheca intera alla volta. */
 export type UiCard = {
-  id: string; col: string; title: string; notes: string; due: string | null;
+  id: string; col: string; title: string; notes: string; due: string | null; start?: string | null;
   labels: string[]; members: string[]; modules: string[]; color?: number | null;
   checklist: { id: string; text: string; done: boolean }[];
   links: { id: string; url: string; title: string }[];
@@ -16,6 +16,7 @@ export type UiCard = {
 };
 export type UiBoard = {
   id: string; title: string; view: string; created: string; color?: number | null; space?: string; version?: number;
+  start?: string | null; end?: string | null;
   labels: { id: string; name: string; color: string }[];
   columns: { id: string; title: string; type: string }[];
   cards: UiCard[];
@@ -41,7 +42,12 @@ const safeUrl = (v: unknown) => {
   return /^(https?:\/\/|mailto:)/i.test(u) ? u : 'https://' + u.replace(/^[a-z][a-z0-9+.-]*:\/*/i, '');
 };
 const isEmail = (v: unknown): v is string => typeof v === 'string' && /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/.test(v);
-const isDay = (v: unknown) => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v);
+/* periodo di una bacheca: si tiene solo se le date sono valide e nell'ordine giusto */
+const period = (start: unknown, end: unknown) => {
+  const s = isDay(start) ? start : null, e = isDay(end) ? end : null;
+  return s && e && s > e ? { inizio: e, fine: s } : { inizio: s, fine: e };
+};
+const isDay = (v: unknown): v is string => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v);
 
 /* Chi può entrare: l'amministratore, chi ha un invito a Flow e chi è stato invitato in uno spazio */
 export async function canEnter(email: string) {
@@ -141,11 +147,11 @@ export async function loadAll(user: SessionUser, onlyBoard?: string) {
 
   return bs.map(b => ({
     id: b.id, title: b.titolo, view: b.vista, color: b.colore, created: b.createdAt.toISOString().slice(0, 10),
-    space: b.spaceId, version: b.versione, by: b.modificatoDa,
+    space: b.spaceId, version: b.versione, by: b.modificatoDa, start: b.inizio, end: b.fine,
     labels: labsOf(b.id).map(l => ({ id: l.id, name: l.nome, color: l.colore })),
     columns: colsOf(b.id).map(c => ({ id: c.id, title: c.titolo, type: c.tipo })),
     cards: cardsOf(b.id).map(c => ({
-      id: c.id, col: c.columnId, title: c.titolo, notes: c.descrizione, due: c.scadenza,
+      id: c.id, col: c.columnId, title: c.titolo, notes: c.descrizione, due: c.scadenza, start: c.inizio,
       modules: c.moduli, color: c.colore, createdAt: c.createdAt.getTime(),
       labels: clOf(c.id).map(x => x.labelId),
       members: [...new Set(cmOf(c.id).map(x => owner(x.membro)))],
@@ -197,6 +203,7 @@ export async function saveBoard(user: SessionUser, id: string, input: UiBoard, p
       spaceId, versione: next, modificatoDa: user.name,
       titolo: str(input.title, 500) || 'Senza titolo', posizione, vista: input.view === 'full' ? 'full' : 'essential',
       colore: Number.isInteger(input.color) && input.color! >= 0 && input.color! < 8 ? input.color! : null,
+      ...period(input.start, input.end),
       createdAt: isDay(input.created) ? new Date(input.created + 'T12:00:00Z') : now
     };
     if (prev) {
@@ -212,7 +219,7 @@ export async function saveBoard(user: SessionUser, id: string, input: UiBoard, p
     if (!cs.length) return { ok: true, version: next };
     await tx.insert(t.cards).values(cs.map((c, i) => ({
       id: c.id, columnId: c.col, boardId: id, titolo: str(c.title, 2000) || 'Senza titolo', descrizione: sanitizeHtml(str(c.notes)),
-      scadenza: isDay(c.due) ? c.due : null, moduli: arr<string>(c.modules).filter(m => typeof m === 'string' && /^[a-z]{1,20}$/.test(m)),
+      scadenza: isDay(c.due) ? c.due : null, inizio: isDay(c.start) && isDay(c.due) && c.start <= c.due ? c.start : null, moduli: arr<string>(c.modules).filter(m => typeof m === 'string' && /^[a-z]{1,20}$/.test(m)),
       colore: Number.isInteger(c.color) && c.color! >= 0 && c.color! < 8 ? c.color! : null,
       posizione: i, createdAt: typeof c.createdAt === 'number' ? new Date(c.createdAt) : now, updatedAt: now
     })));
