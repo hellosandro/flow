@@ -192,3 +192,11 @@ Il login con Google, gli studi su invito e gli spazi (sezione 2) coprono già il
 - [x] Titolo delle colonne fisse modificabile: sì
 - [ ] Set di etichette predefinito per le nuove bacheche
 - [ ] Archivio delle schede in "Fatto" dopo un certo tempo, o restano lì
+
+## 11. Idee per il futuro
+
+- **Palette per studio**: nelle impostazioni dello spazio ogni studio sceglie la sua palette (tra alcune proposte o creandone una), usata per bacheche e schede al posto di quella predefinita (sezione 4).
+- **Planning** (anteprima approvata nell'impostazione, non ancora costruita): una pagina per tutto lo spazio con i mesi in orizzontale e i cantieri (bacheche) in verticale, una barra per cantiere dal suo Inizio alla sua Fine (date della bacheca). Una freccia apre il cantiere e mostra le schede con date: barre per le lavorazioni (Inizio e Fine), rombi per le scadenze di un giorno. Il modulo Scadenza diventa *Date* con Inizio facoltativo. Niente colonne o stati nel planning: deve restare semplice come uno schema su carta o in Excel.
+- **Imprese**: elenco di imprese e fornitori per spazio e modulo *Impresa* nella scheda, per vedere nel planning quando un'impresa è già occupata su un altro cantiere (sovrapposizioni in rosso).
+- **Inviti per email**: un pulsante che prepara la mail di invito nell'app di posta, oppure l'invio automatico con un servizio come Resend.
+- **Notifiche**: avviso quando qualcuno commenta una scheda di cui si è membri; allora *Commenti* potrà chiamarsi *Discussione*.
