@@ -7,8 +7,9 @@
 <style>
 /* Layout: barra in alto con titolo grande in stile iOS, sotto le colonne affiancate a larghezza fissa che scorrono in orizzontale, come su Trello, anche su telefono. */
 :root {
-  /* bacheche (in entrambi i temi): colori pieni, come una mazzetta Pantone */
-  --bc-0: #D2232A; --bc-1: #E06F2A; --bc-2: #9BD8D2; --bc-3: #5A9B63; --bc-4: #1F3A9A; --bc-5: #BF3AAB;
+  /* Una sola palette (dal logo di studio.20 e da una palette mid century) in due intensità.
+     Piena per le bacheche, in entrambi i temi: Salvia, Pesca, Ocra, Polvere, Terracotta, Cacao, Petrolio, Oliva */
+  --bc-0: #9BBDB0; --bc-1: #EBB38F; --bc-2: #C9921F; --bc-3: #8FA4B6; --bc-4: #B85E37; --bc-5: #5B4846; --bc-6: #3F6E6B; --bc-7: #8A8650;
   --bg: #F2F2F7;
   --surface: #FFFFFF;
   --fill: rgba(120,120,128,.12);
@@ -93,8 +94,8 @@
   --t-sub: 400 13px/1.4 var(--font);
   --t-cap: 500 11px/1.35 var(--font);
   --caps: .18em;
-  /* post-it: toni carta smorzati */
-  --pi-0: #EADFC4; --pi-1: #E6A9A2; --pi-2: #AFC1D1; --pi-3: #C9A9AE; --pi-4: #C3D6B4; --pi-5: #F2C29E;
+  /* post-it: gli stessi colori delle bacheche, schiariti, così il testo nero si legge sempre */
+  --pi-0: #D5E3DE; --pi-1: #F7DFD0; --pi-2: #E8D1A1; --pi-3: #D0D9E0; --pi-4: #E1BBAB; --pi-5: #BAB2B1; --pi-6: #AEC2C1; --pi-7: #CECCB6;
   --pi-ink: #1E1E1E;
   color-scheme: light;
 }
@@ -1107,8 +1108,8 @@ function dueInfo(due, done) {
 }
 
 /* colore del post-it (tema Carta): sempre lo stesso per la stessa scheda */
-const tintOf = c => Number.isInteger(c.color) ? c.color : [...c.id].reduce((n, ch) => n + ch.charCodeAt(0), 0) % 6;
-const TINTS = ['Beige', 'Rosa', 'Azzurro', 'Malva', 'Salvia', 'Pesca'];
+const TINTS = ['Salvia', 'Pesca', 'Ocra', 'Polvere', 'Terracotta', 'Cacao', 'Petrolio', 'Oliva'];
+const tintOf = c => Number.isInteger(c.color) && c.color < TINTS.length ? c.color : [...c.id].reduce((n, ch) => n + ch.charCodeAt(0), 0) % TINTS.length;
 function cardHTML(c, col) {
   /* Un modulo nascosto (spunta tolta) non compare da nessuna parte, nemmeno la sua scadenza */
   const on = k => !c.modules || c.modules.includes(k);
@@ -1941,8 +1942,9 @@ function urgentOf(b) {
   return { late, soon };
 }
 /* colore della tessera (tema Carta): scelto dal menu "…" oppure, se manca, sempre lo stesso per la stessa bacheca */
-const BOARD_TINTS = ['Rosso', 'Arancio', 'Tiffany', 'Verde', 'Blu', 'Magenta'];
-const boardTint = b => Number.isInteger(b.color) ? b.color : [...b.id].reduce((n, ch) => n + ch.charCodeAt(0), 0) % 6;
+/* le bacheche usano gli stessi colori delle schede, in versione piena */
+const BOARD_TINTS = TINTS;
+const boardTint = b => Number.isInteger(b.color) && b.color < BOARD_TINTS.length ? b.color : [...b.id].reduce((n, ch) => n + ch.charCodeAt(0), 0) % BOARD_TINTS.length;
 function renderHome() {
   const sp = spaceOf(space), shown = boards.filter(b => b.space === space);
   $('.home-title').textContent = spaces.length > 1 ? sp?.name || 'Bacheche' : 'Bacheche';
