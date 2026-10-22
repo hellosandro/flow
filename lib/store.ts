@@ -196,7 +196,7 @@ export async function saveBoard(user: SessionUser, id: string, input: UiBoard, p
     const row = {
       spaceId, versione: next, modificatoDa: user.name,
       titolo: str(input.title, 500) || 'Senza titolo', posizione, vista: input.view === 'full' ? 'full' : 'essential',
-      colore: Number.isInteger(input.color) && input.color! >= 0 && input.color! < 6 ? input.color! : null,
+      colore: Number.isInteger(input.color) && input.color! >= 0 && input.color! < 8 ? input.color! : null,
       createdAt: isDay(input.created) ? new Date(input.created + 'T12:00:00Z') : now
     };
     if (prev) {
@@ -213,7 +213,7 @@ export async function saveBoard(user: SessionUser, id: string, input: UiBoard, p
     await tx.insert(t.cards).values(cs.map((c, i) => ({
       id: c.id, columnId: c.col, boardId: id, titolo: str(c.title, 2000) || 'Senza titolo', descrizione: sanitizeHtml(str(c.notes)),
       scadenza: isDay(c.due) ? c.due : null, moduli: arr<string>(c.modules).filter(m => typeof m === 'string' && /^[a-z]{1,20}$/.test(m)),
-      colore: Number.isInteger(c.color) && c.color! >= 0 && c.color! < 6 ? c.color! : null,
+      colore: Number.isInteger(c.color) && c.color! >= 0 && c.color! < 8 ? c.color! : null,
       posizione: i, createdAt: typeof c.createdAt === 'number' ? new Date(c.createdAt) : now, updatedAt: now
     })));
     const cl = cs.flatMap(c => [...new Set(arr<string>(c.labels))].filter(l => labIds.has(l)).map(labelId => ({ cardId: c.id, labelId })));
