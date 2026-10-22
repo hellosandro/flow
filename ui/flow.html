@@ -509,6 +509,52 @@ body.grabbing, body.grabbing * { cursor: grabbing !important; }
 .tile-new:hover { background: var(--fill); box-shadow: none; color: var(--label); }
 .alert-wrap.fixed { position: fixed; z-index: 40; }
 
+/* Planning: mesi in orizzontale, cantieri (bacheche) in verticale, come uno schema su carta.
+   La freccia apre le schede con date del cantiere. */
+.plan-tools { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 0 var(--gutter-r) 8px var(--gutter-l); }
+.plan-count { font: var(--t-cap); color: var(--label-2); }
+.plan-wrap { overflow-x: auto; margin: 0 var(--gutter-r) 40px var(--gutter-l); border-top: 1px solid var(--pl-line); border-bottom: 1px solid var(--pl-line); -webkit-overflow-scrolling: touch; }
+.pl { --pl-lw: 210px; --pl-mw: 112px; position: relative; width: max(100%, calc(var(--pl-lw) + var(--months) * var(--pl-mw))); }
+.pl-row { display: grid; grid-template-columns: var(--pl-lw) 1fr; border-bottom: .5px solid var(--sep); }
+.pl-row:last-child { border-bottom: 0; }
+.pl-label { position: sticky; left: 0; z-index: 4; background: var(--bg); border-right: .5px solid var(--sep); min-width: 0; display: flex; align-items: center; gap: 6px; padding-right: 10px; }
+.pl-track { position: relative; }
+.pl-head { position: sticky; top: 0; z-index: 5; background: var(--bg); border-bottom: 1px solid var(--pl-line); height: 34px; }
+.pl-head .pl-label { font: var(--t-cap); color: var(--label-2); text-transform: uppercase; letter-spacing: .08em; }
+.pl-month { position: absolute; top: 0; bottom: 0; padding: 11px 0 0 8px; font: var(--t-cap); text-transform: uppercase; letter-spacing: .08em; white-space: nowrap; }
+.pl-site { min-height: 52px; }
+.pl-chev { width: 28px; height: 28px; display: grid; place-items: center; flex: none; color: var(--label); }
+.pl-chev svg.i { transition: transform .15s; }
+.pl-chev[aria-expanded="true"] svg.i { transform: rotate(90deg); }
+.pl-chev:disabled { visibility: hidden; }
+.pl-name { display: grid; justify-items: start; gap: 1px; min-width: 0; text-align: left; padding: 6px 0; }
+.pl-name b { font: var(--t-head); overflow-wrap: anywhere; }
+.pl-name > button, button.pl-name { text-align: left; justify-self: start; padding: 0; }
+button.pl-name { padding: 6px 0; }
+.pl-name > button:hover b, button.pl-name:hover b { text-decoration: underline; text-underline-offset: 3px; }
+.pl-dates { justify-self: start; font: var(--t-cap); color: var(--label-2); font-variant-numeric: tabular-nums; padding: 2px 0; }
+.pl-dates.empty-dates { color: var(--blue); }
+.pl-bar { position: absolute; top: 12px; height: 28px; background: var(--c); color: var(--on); display: flex; align-items: center; padding: 0 10px; font: var(--t-sub); font-weight: 500; white-space: nowrap; overflow: hidden; z-index: 2; border-radius: 6px; text-align: left; }
+.pl-bar.guess { background: none; box-shadow: inset 0 0 0 1.5px var(--c); color: var(--label-2); }
+.pl-add { position: absolute; top: 14px; font: var(--t-sub); color: var(--blue); z-index: 2; padding: 2px 4px; white-space: nowrap; }
+.pl-job { min-height: 38px; background: var(--fill); }
+.pl-job .pl-label { background: color-mix(in srgb, var(--label) 4%, var(--bg)); padding-left: 34px; }
+.pl-job .pl-name b { font: var(--t-sub); font-weight: 400; }
+.pl-dbar { position: absolute; top: 9px; height: 20px; background: color-mix(in srgb, var(--c) 35%, var(--bg)); box-shadow: inset 3px 0 0 var(--c); z-index: 2; border-radius: 3px; }
+.pl-ms { position: absolute; top: 50%; width: 11px; height: 11px; background: var(--bg); box-shadow: 0 0 0 1.5px var(--c); transform: translate(-50%, -50%) rotate(45deg); z-index: 2; }
+.pl-msdate { position: absolute; top: 50%; transform: translateY(-50%); padding-left: 11px; font: var(--t-cap); color: var(--label-2); white-space: nowrap; z-index: 2; }
+.pl-ov { position: absolute; inset: 0 0 0 var(--pl-lw); pointer-events: none; }
+.pl-grid { position: absolute; top: 0; bottom: 0; border-left: .5px solid var(--sep); }
+.pl-today { position: absolute; top: 0; bottom: 0; border-left: 1.5px solid var(--red); }
+.pl-today span { position: absolute; top: 38px; left: 4px; font: 600 10px/1 var(--font); letter-spacing: .12em; text-transform: uppercase; color: var(--red); background: var(--bg); padding: 2px 3px; }
+.pd-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.pd-grid label { display: grid; gap: 6px; font: var(--t-sub); color: var(--label-2); }
+@media (max-width: 640px) { .pl { --pl-lw: 140px; --pl-mw: 92px; } }
+:root { --pl-line: var(--sep); }
+[data-skin="carta"] { --pl-line: var(--rule); }
+[data-skin="carta"] .pl-bar, [data-skin="carta"] .pl-dbar { border-radius: 0; }
+[data-skin="carta"] .pl-name b { font-weight: 500; }
+
 /* Avviso di conferma, nello stile degli avvisi di iPhone */
 .alert-wrap { position: absolute; inset: 0; z-index: 10; display: grid; place-items: center; padding: 24px; background: var(--scrim); animation: fade .15s ease; }
 .alert { width: min(280px, 100%); background: var(--surface); border-radius: 14px; box-shadow: var(--lift-shadow); text-align: center; overflow: hidden; }
@@ -580,6 +626,12 @@ body.grabbing, body.grabbing * { cursor: grabbing !important; }
 .due-state.due-late { color: var(--red); }
 .due-state.none { color: var(--label-3); }
 .quick { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+.date-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 10px; max-width: 420px; }
+.date-col { display: grid; gap: 6px; min-width: 0; }
+.date-col .date-field { width: 100%; min-width: 0; }
+.date-lab { font: var(--t-sub); color: var(--label-2); }
+.date-lab small { font: var(--t-cap); color: var(--label-3); }
+.date-span { font: var(--t-sub); color: var(--label-2); margin: 0 0 14px; font-variant-numeric: tabular-nums; }
 .date-field { border: 0; background: var(--fill); border-radius: 8px; padding: 7px 10px; font: var(--t-body); color: var(--label); }
 
 .msgs { display: flex; flex-direction: column; gap: 20px; }
@@ -798,6 +850,7 @@ body.grabbing, body.grabbing * { cursor: grabbing !important; }
     <div class="nav">
       <span class="brand">FLOW</span>
       <div class="nav-right">
+        <button type="button" class="logout" id="plan-btn">Planning</button>
         <div class="view-wrap" id="space-wrap" hidden>
           <button type="button" class="logout" id="space-btn" aria-haspopup="menu" aria-expanded="false">Spazi</button>
           <div class="menu right view-menu" id="space-menu" role="menu" hidden></div>
@@ -820,10 +873,21 @@ body.grabbing, body.grabbing * { cursor: grabbing !important; }
   <div id="home-alert"></div>
 </div>
 
+<div class="home plan" id="plan" hidden>
+  <header class="top">
+    <div class="nav"><button class="back" type="button" id="plan-back"><svg class="i" viewBox="0 0 16 16"><path d="M10 3 5 8l5 5"/></svg>Bacheche</button></div>
+    <h1 class="home-title">Planning</h1>
+    <p class="home-empty" id="plan-empty" hidden>Nessuna bacheca in questo spazio.</p>
+  </header>
+  <div class="plan-tools"><span class="plan-count" id="plan-count"></span><button type="button" class="logout" id="plan-all">Apri tutti</button></div>
+  <div class="plan-wrap" id="plan-wrap"></div>
+  <div id="plan-alert"></div>
+</div>
+
 <div class="app" id="app">
   <header class="top">
     <div class="nav">
-      <button class="back" type="button"><svg class="i" viewBox="0 0 16 16"><path d="M10 3 5 8l5 5"/></svg>Bacheche</button>
+      <button class="back" type="button" id="board-back"><svg class="i" viewBox="0 0 16 16"><path d="M10 3 5 8l5 5"/></svg>Bacheche</button>
       <div class="nav-right">
         <div class="view-wrap">
           <button class="icon-btn" type="button" id="view-btn" aria-label="Vista delle schede" aria-haspopup="menu" aria-expanded="false" title="Vista delle schede">
@@ -958,6 +1022,7 @@ function toast(text) {
   clearTimeout(toastTimer); toastTimer = setTimeout(() => { el.hidden = true; }, 4000);
 }
 function rerender() {
+  if (!planEl.hidden) { renderPlanning(); return; }
   if (!appEl.hidden && state) {
     if (!boards.includes(state)) { showHome(); return; }
     renderBoard(); if (state.open) renderSheet();
@@ -1165,7 +1230,7 @@ function updateSeg() {
 
 /* Scheda aperta: titolo, poi una riga di pillole. Descrizione e Messaggi ci sono sempre;
    Checklist, Link, Scadenza ed Etichette compaiono solo se li aggiungi. Sotto, il contenuto della pillola scelta. */
-const MODULES = { checklist: 'Checklist', links: 'Link', due: 'Scadenza', labels: 'Etichette', members: 'Membri' };
+const MODULES = { checklist: 'Checklist', links: 'Link', due: 'Date', labels: 'Etichette', members: 'Membri' };
 const LABEL_COLORS = ['blue', 'green', 'orange', 'red', 'purple', 'teal', 'pink'];
 const ui = { navOpen: false, tab: 'desc', menu: null, confirm: null, addingItem: false, editDesc: false, draft: '' };
 
@@ -1231,7 +1296,7 @@ function navHTML(c) {
   for (const k of c.modules) {
     if (k === 'checklist') out.push(item(k, 'Checklist', c.checklist.length ? `${c.checklist.filter(i => i.done).length}/${c.checklist.length}` : ''));
     if (k === 'links') out.push(item(k, 'Link', c.links.length || ''));
-    if (k === 'due') { const due = dueInfo(c.due, col.type === 'fatto'); out.push(item(k, 'Scadenza', due ? `<span class="${due.cls}">${esc(due.text)}</span>` : '')); }
+    if (k === 'due') { const due = dueInfo(c.due, col.type === 'fatto'); out.push(item(k, 'Date', c.start && c.due ? `${fmtShort(c.start)} – ${fmtShort(c.due)}` : due ? `<span class="${due.cls}">${esc(due.text)}</span>` : '')); }
     if (k === 'labels') { const labs = c.labels.map(labelOf).filter(Boolean); out.push(item(k, 'Etichette', labs.length ? `<span class="dots">${labs.map(l => `<i style="--c:${l.color}"></i>`).join('')}</span>` : '')); }
     if (k === 'members') out.push(item(k, 'Membri', c.members.length ? avatars(c.members) : ''));
   }
@@ -1251,7 +1316,7 @@ const plural = (n, one, many) => n === 1 ? one : `${n} ${many}`;
 function contentHint(c, k) {
   if (k === 'checklist' && c.checklist.length) return plural(c.checklist.length, '1 elemento', 'elementi');
   if (k === 'links' && c.links.length) return plural(c.links.length, '1 link', 'link');
-  if (k === 'due' && c.due) return fmtShort(c.due);
+  if (k === 'due' && c.due) return c.start ? `${fmtShort(c.start)} – ${fmtShort(c.due)}` : fmtShort(c.due);
   if (k === 'labels' && c.labels.length) return plural(c.labels.length, '1 etichetta', 'etichette');
   if (k === 'members' && c.members.length) return plural(c.members.length, '1 persona', 'persone');
   return '';
@@ -1260,7 +1325,7 @@ function confirmText(c, k) {
   const n = { checklist: c.checklist.length, links: c.links.length, labels: c.labels.length, members: c.members.length }[k];
   if (k === 'checklist') return n === 1 ? 'L’elemento verrà cancellato definitivamente.' : `I ${n} elementi verranno cancellati definitivamente.`;
   if (k === 'links') return n === 1 ? 'Il link verrà cancellato definitivamente.' : `I ${n} link verranno cancellati definitivamente.`;
-  if (k === 'due') return `La scadenza del ${fmtLong(c.due)} verrà cancellata.`;
+  if (k === 'due') return c.start ? `Le date dal ${fmtLong(c.start)} al ${fmtLong(c.due)} verranno cancellate.` : `La data del ${fmtLong(c.due)} verrà cancellata.`;
   if (k === 'labels') return n === 1 ? 'L’etichetta verrà tolta dalla scheda.' : `Le ${n} etichette verranno tolte dalla scheda.`;
   return n === 1 ? 'La persona verrà tolta dalla scheda.' : `Le ${n} persone verranno tolte dalla scheda.`;
 }
@@ -1312,13 +1377,21 @@ function panelHTML(c) {
         cls = col.type === 'fatto' ? '' : d < 0 ? 'due-late' : d <= 3 ? 'due-soon' : '';
         text = d < 0 ? `Scaduta da ${-d} ${d === -1 ? 'giorno' : 'giorni'}` : d === 0 ? 'Scade oggi' : d === 1 ? 'Scade domani' : `Scade il ${fmtLong(c.due)}`;
       }
+      /* Fine è la scadenza; con anche l'Inizio la scheda diventa una barra nel Planning */
+      const span = c.start && c.due ? diffDays(c.due, c.start) + 1 : 0;
       return `<p class="due-state ${cls}">${text}</p>
+        <div class="date-pair">
+          <div class="date-col"><label class="date-lab" for="f-start">Inizio <small>facoltativo</small></label>
+            <input type="date" id="f-start" class="date-field" value="${c.start || ''}" ${c.due ? `max="${c.due}"` : ''}></div>
+          <div class="date-col"><label class="date-lab" for="f-due">Fine</label>
+            <input type="date" id="f-due" class="date-field" value="${c.due || ''}" ${c.start ? `min="${c.start}"` : ''}></div>
+        </div>
+        ${span ? `<p class="date-span">${span < 14 ? plural(span, '1 giorno', 'giorni') : plural(Math.round(span / 7), '1 settimana', 'settimane')}</p>` : ''}
         <div class="quick pills">
           <button type="button" data-duequick="0">Oggi</button>
           <button type="button" data-duequick="1">Domani</button>
           <button type="button" data-duequick="7">Tra una settimana</button>
         </div>
-        <input type="date" id="f-due" class="date-field" value="${c.due || ''}" aria-label="Scegli una data">
 `;
     }
     case 'labels':
@@ -1602,7 +1675,7 @@ function deleteModule(c, k) {
   c.modules = c.modules.filter(x => x !== k);
   if (k === 'checklist') c.checklist = [];
   if (k === 'links') c.links = [];
-  if (k === 'due') c.due = null;
+  if (k === 'due') { c.due = null; c.start = null; }
   if (k === 'labels') c.labels = [];
   if (k === 'members') c.members = [];
   ui.tab = 'desc';
@@ -1805,7 +1878,7 @@ sheetEl.addEventListener('click', e => {
   if (tab) { saveDesc(c); ui.editMsg = null; ui.navOpen = false; ui.tab = tab.dataset.tab; ui.addingItem = false; ui.editLabels = false; renderSheet({ bottom: true }); return; }
   if (t.closest('[data-additem]')) { ui.addingItem = true; renderSheet(); focusEnd('#f-newitem'); return; }
   const q = t.closest('[data-duequick]');
-  if (q) { c.due = addDays(today, +q.dataset.duequick); renderSheet(); return; }
+  if (q) { c.due = addDays(today, +q.dataset.duequick); if (c.start && c.start > c.due) c.start = null; renderSheet(); return; }
   if (t.closest('[data-labedit]')) { ui.editLabels = true; renderSheet(); return; }
   if (t.closest('[data-labdone]')) {
     /* le etichette rimaste senza nome spariscono */
@@ -1875,7 +1948,9 @@ sheetEl.addEventListener('input', e => {
 });
 sheetEl.addEventListener('change', e => {
   const c = cardOf(state.open); if (!c) return;
-  if (e.target.id === 'f-due') { c.due = e.target.value || null; renderSheet(); }
+  /* un Inizio senza Fine vale come giorno singolo; date al contrario si scambiano */
+  if (e.target.id === 'f-due') { c.due = e.target.value || null; if (!c.due) c.start = null; else if (c.start && c.start > c.due) [c.start, c.due] = [c.due, c.start]; renderSheet(); }
+  if (e.target.id === 'f-start') { c.start = e.target.value || null; if (c.start && !c.due) c.due = c.start; else if (c.start && c.start > c.due) [c.start, c.due] = [c.due, c.start]; renderSheet(); }
 });
 sheetEl.addEventListener('focusout', e => {
   if (e.target.id === 'f-newitem' && !e.target.value.trim() && cardOf(state.open)?.checklist.length) {
@@ -2101,14 +2176,135 @@ $('#home-alert').addEventListener('click', async e => {
   if (t.closest('[data-spacedelete]')) { if (await spaceApi('DELETE', path)) { setSpace(spaces[0]?.id); closeSheetHome(); } }
 });
 
+/* Planning: una riga per bacheca (il cantiere) con la barra dal suo Inizio alla sua Fine;
+   la freccia mostra sotto le schede con date (barre se hanno anche l'Inizio, rombi se no).
+   Le date del cantiere si scrivono qui, toccando le date o la barra. */
+const planEl = $('#plan');
+const planUi = { open: new Set(), edit: null };
+try { planUi.open = new Set(JSON.parse(localStorage.getItem('flow-plan-open') || '[]')); } catch {}
+const LIGHT_TINTS = 4; /* i primi 4 colori sono chiari: testo nero sopra */
+const monthStart = iso => iso.slice(0, 8) + '01';
+const addMonths = (iso, n) => { const d = new Date(monthStart(iso) + 'T00:00:00Z'); d.setUTCMonth(d.getUTCMonth() + n); return d.toISOString().slice(0, 10); };
+const MONTHS_IT = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
+const planJobs = b => b.cards.filter(c => c.due && (c.modules || []).includes('due')).sort((x, y) => (x.start || x.due).localeCompare(y.start || y.due));
+function planPeriod(b) {
+  if (b.start || b.end) return { start: b.start || b.end, end: b.end || b.start, set: true };
+  const jobs = planJobs(b);
+  if (!jobs.length) return null;
+  /* senza date del cantiere si mostra il periodo coperto dalle schede, solo come contorno */
+  return { start: jobs.map(c => c.start || c.due).sort()[0], end: jobs.map(c => c.due).sort().at(-1), set: false };
+}
+function renderPlanning() {
+  const list = boards.filter(b => b.space === space);
+  $('#plan-empty').hidden = list.length > 0;
+  const rows = list.map(b => ({ b, p: planPeriod(b), jobs: planJobs(b) }))
+    .sort((x, y) => !x.p - !y.p || (x.p && y.p ? x.p.start.localeCompare(y.p.start) : 0));
+  /* da un mese prima di oggi (o dal primo cantiere) a cinque mesi dopo (o all'ultimo) */
+  const ends = rows.flatMap(x => x.p ? [x.p.start, x.p.end] : []).concat(rows.flatMap(x => x.jobs.flatMap(c => [c.start || c.due, c.due])));
+  const first = [addMonths(today, -1), ...ends].sort()[0], last = [addMonths(today, 6), ...ends].sort().at(-1);
+  const r0 = monthStart(first), r1 = addMonths(last, 1);
+  const months = []; for (let m = r0; m < r1; m = addMonths(m, 1)) months.push(m);
+  const span = Date.parse(r1) - Date.parse(r0);
+  const pct = iso => ((Date.parse(iso) - Date.parse(r0)) / span) * 100;
+  const wpct = (a, b) => ((Date.parse(b) - Date.parse(a) + 864e5) / span) * 100; /* la fine è inclusa */
+  const range = p => `${fmtShort(p.start)} – ${fmtShort(p.end)}${p.end.slice(0, 4) !== today.slice(0, 4) ? ' ' + p.end.slice(0, 4) : ''}`;
+  const head = `<div class="pl-row pl-head"><div class="pl-label">Cantiere</div><div class="pl-track">${months.map(m =>
+    `<div class="pl-month" style="left:${pct(m)}%">${MONTHS_IT[+m.slice(5, 7) - 1]}${m.slice(5, 7) === '01' ? ' ' + m.slice(0, 4) : ''}</div>`).join('')}</div></div>`;
+  let body = '';
+  for (const { b, p, jobs } of rows) {
+    const open = planUi.open.has(b.id) && jobs.length > 0, tint = boardTint(b);
+    const style = `--c: var(--bc-${tint}); --on: ${tint < LIGHT_TINTS ? '#1E1E1E' : '#FFFFFF'}`;
+    body += `<div class="pl-row pl-site" style="${style}">
+      <div class="pl-label"><button type="button" class="pl-chev" data-plantoggle="${b.id}" aria-expanded="${open}" ${jobs.length ? '' : 'disabled'} aria-label="${open ? 'Chiudi' : 'Apri'} le schede di ${esc(b.title)}"><svg class="i" viewBox="0 0 16 16"><path d="M6 3.5 10.5 8 6 12.5"/></svg></button>
+        <span class="pl-name"><button type="button" data-planboard="${b.id}" title="Apri la bacheca"><b>${esc(b.title)}</b></button>
+        <button type="button" class="pl-dates ${p?.set ? '' : 'empty-dates'}" data-plandates="${b.id}">${p?.set ? range(p) : 'Aggiungi date'}</button></span></div>
+      <div class="pl-track">${p
+        ? `<button type="button" class="pl-bar ${p.set ? '' : 'guess'}" data-plandates="${b.id}" style="left:${pct(p.start)}%;width:${wpct(p.start, p.end)}%" title="${esc(b.title)} · ${range(p)}${p.set ? '' : ' (dalle schede)'}">${esc(b.title)}</button>`
+        : `<button type="button" class="pl-add" data-plandates="${b.id}" style="left:${pct(today)}%">+ Aggiungi date</button>`}</div>
+    </div>`;
+    if (!open) continue;
+    for (const c of jobs) {
+      const mark = c.start
+        ? `<div class="pl-dbar" style="left:${pct(c.start)}%;width:${wpct(c.start, c.due)}%"></div>`
+        : `<div class="pl-ms" style="left:${pct(c.due) + wpct(c.due, c.due) / 2}%"></div><span class="pl-msdate" style="left:${pct(c.due) + wpct(c.due, c.due) / 2}%">${fmtShort(c.due)}</span>`;
+      body += `<div class="pl-row pl-job" style="${style}"><div class="pl-label"><button type="button" class="pl-name" data-plancard="${c.id}" data-board="${b.id}"><b>${esc(c.title)}</b></button></div>
+        <div class="pl-track" title="${esc(c.title)} · ${c.start ? fmtShort(c.start) + ' – ' : ''}${fmtShort(c.due)}">${mark}</div></div>`;
+    }
+  }
+  const lines = months.map(m => `<div class="pl-grid" style="left:${pct(m)}%"></div>`).join('');
+  $('#plan-wrap').innerHTML = list.length ? `<div class="pl" style="--months:${months.length}">${head}<div style="position:relative">${body}
+    <div class="pl-ov" style="z-index:1">${lines}</div><div class="pl-ov" style="z-index:3"><div class="pl-today" style="left:${pct(today)}%"><span>Oggi</span></div></div></div></div>` : '';
+  $('#plan-count').textContent = list.length ? plural(list.length, '1 cantiere', 'cantieri') : '';
+  const openable = rows.filter(x => x.jobs.length);
+  $('#plan-all').hidden = !openable.length;
+  $('#plan-all').textContent = openable.length && openable.every(x => planUi.open.has(x.b.id)) ? 'Chiudi tutti' : 'Apri tutti';
+  renderPlanEditor();
+  return pct;
+}
+function renderPlanEditor() {
+  const b = boards.find(x => x.id === planUi.edit);
+  $('#plan-alert').innerHTML = b ? `<div class="alert-wrap fixed"><div class="alert space" role="dialog" aria-modal="true" aria-labelledby="pd-t">
+    <h3 id="pd-t">Date di “${esc(b.title)}”</h3>
+    <div class="sp-body">
+      <div class="pd-grid"><label>Inizio<input type="date" id="pd-start" class="sp-input" value="${b.start || ''}"></label><label>Fine<input type="date" id="pd-end" class="sp-input" value="${b.end || ''}"></label></div>
+      <p class="sp-note">Sono le date di tutto il cantiere: fanno la barra colorata del Planning. Le date delle singole lavorazioni si mettono nelle schede.</p>
+    </div>
+    <div class="alert-actions"><button type="button" class="danger" data-pdclear ${b.start || b.end ? '' : 'disabled'}>Togli le date</button><button type="button" class="strong" data-pdsave>Fatto</button></div>
+  </div></div>` : '';
+}
+function saveBoardDates(b, start, end) {
+  if (start && end && start > end) [start, end] = [end, start];
+  b.start = start || null; b.end = end || null;
+  dirty.add(b.id); scheduleSave();
+}
+function showPlanning() {
+  if (state) { state.open = null; renderSheet(); }
+  appEl.hidden = true; homeEl.hidden = true; planEl.hidden = false;
+  const pct = renderPlanning();
+  /* il calendario parte da un mese prima di oggi */
+  const wrap = $('#plan-wrap'), track = wrap.querySelector('.pl-head .pl-track');
+  if (track && pct) wrap.scrollLeft = Math.max(0, (pct(addMonths(today, -1)) / 100) * track.offsetWidth);
+}
+const savePlanOpen = () => { try { localStorage.setItem('flow-plan-open', JSON.stringify([...planUi.open])); } catch {} };
+let backTo = 'home';
+$('#plan-btn').addEventListener('click', showPlanning);
+$('#plan-back').addEventListener('click', showHome);
+planEl.addEventListener('click', e => {
+  const t = e.target;
+  const tog = t.closest('[data-plantoggle]');
+  if (tog) { const id = tog.dataset.plantoggle; planUi.open.has(id) ? planUi.open.delete(id) : planUi.open.add(id); savePlanOpen(); renderPlanning(); return; }
+  if (t.closest('#plan-all')) {
+    const ids = boards.filter(b => b.space === space && planJobs(b).length).map(b => b.id);
+    const all = ids.every(id => planUi.open.has(id));
+    ids.forEach(id => all ? planUi.open.delete(id) : planUi.open.add(id)); savePlanOpen(); renderPlanning(); return;
+  }
+  const ob = t.closest('[data-planboard]');
+  if (ob) { backTo = 'plan'; openBoard(boards.find(b => b.id === ob.dataset.planboard)); return; }
+  const oc = t.closest('[data-plancard]');
+  if (oc) { backTo = 'plan'; openBoard(boards.find(b => b.id === oc.dataset.board)); openCard(oc.dataset.plancard); return; }
+  const pd = t.closest('[data-plandates]');
+  if (pd) { planUi.edit = pd.dataset.plandates; renderPlanEditor(); $('#pd-start')?.focus(); return; }
+  const b = boards.find(x => x.id === planUi.edit);
+  if (!b) return;
+  if (t.closest('[data-pdsave]')) { saveBoardDates(b, $('#pd-start').value, $('#pd-end').value); planUi.edit = null; renderPlanning(); return; }
+  if (t.closest('[data-pdclear]')) { saveBoardDates(b, null, null); planUi.edit = null; renderPlanning(); return; }
+  if (t.classList.contains('alert-wrap')) { planUi.edit = null; renderPlanEditor(); }
+});
+planEl.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && planUi.edit) { planUi.edit = null; renderPlanEditor(); }
+  if (e.key === 'Enter' && e.target.closest?.('#plan-alert input')) $('[data-pdsave]')?.click();
+});
+
 function showHome() {
   if (state) { state.open = null; renderSheet(); }
-  appEl.hidden = true; homeEl.hidden = false;
+  appEl.hidden = true; planEl.hidden = true; homeEl.hidden = false; backTo = 'home';
   renderHome();
 }
 function openBoard(b) {
   state = b; homeUi.menu = null;
-  homeEl.hidden = true; appEl.hidden = false;
+  homeEl.hidden = true; planEl.hidden = true; appEl.hidden = false;
+  /* la freccia in alto riporta da dove si è arrivati: bacheche o planning */
+  $('#board-back').lastChild.textContent = backTo === 'plan' ? 'Planning' : 'Bacheche';
   boardEl.scrollLeft = 0;
   renderBoard();
 }
@@ -2139,7 +2335,7 @@ homeEl.addEventListener('keydown', e => {
   const tile = e.target.closest('[data-openboard]');
   if (tile && e.target === tile && e.key === 'Enter') openBoard(boards.find(b => b.id === tile.dataset.openboard));
 });
-$('.back').addEventListener('click', showHome);
+$('#board-back').addEventListener('click', () => backTo === 'plan' ? showPlanning() : showHome());
 
 /* Tema: vale per questo dispositivo */
 const skinBtn = $('#skin-btn'), skinMenu = $('#skin-menu');

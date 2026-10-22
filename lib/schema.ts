@@ -43,6 +43,9 @@ export const boards = pgTable('boards', {
   posizione: real('posizione').notNull().default(0),
   vista: text('vista').notNull().default('essential'),
   colore: integer('colore'),
+  /* periodo del cantiere, per il Planning (facoltativo) */
+  inizio: date('inizio'),
+  fine: date('fine'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
 });
 
@@ -68,6 +71,8 @@ export const cards = pgTable('cards', {
   boardId: text('board_id').notNull().references(() => boards.id, { onDelete: 'cascade' }),
   titolo: text('titolo').notNull(),
   descrizione: text('descrizione').notNull().default(''),
+  /* la scadenza è la Fine; l'Inizio è facoltativo e serve al Planning */
+  inizio: date('inizio'),
   scadenza: date('scadenza'),
   moduli: text('moduli').array().notNull().default([]),
   colore: integer('colore'),
