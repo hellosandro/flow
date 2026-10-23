@@ -3,7 +3,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geologica:wght@300;400;500;600&display=swap">
-<script>try { document.documentElement.dataset.skin = localStorage.getItem('flow-skin') || 'carta'; } catch {}</script>
+<script>/* per ora solo il tema Carta: il tema Sistema resta nel codice ma non si può scegliere */
+document.documentElement.dataset.skin = 'carta';</script>
 <style>
 /* Layout: barra in alto con titolo grande in stile iOS, sotto le colonne affiancate a larghezza fissa che scorrono in orizzontale, come su Trello, anche su telefono. */
 :root {
@@ -860,7 +861,7 @@ button.pl-name { padding: 6px 0; }
           <button type="button" class="logout" id="space-btn" aria-haspopup="menu" aria-expanded="false">Spazi</button>
           <div class="menu right view-menu" id="space-menu" role="menu" hidden></div>
         </div>
-        <div class="view-wrap" id="skin-wrap">
+        <div class="view-wrap" id="skin-wrap" hidden>
           <button type="button" class="logout" id="skin-btn" aria-haspopup="menu" aria-expanded="false">Tema</button>
           <div class="menu right view-menu" id="skin-menu" role="menu" hidden>
             <p class="menu-head">Tema</p>
@@ -894,7 +895,7 @@ button.pl-name { padding: 6px 0; }
     <div class="nav">
       <button class="back" type="button" id="board-back"><svg class="i" viewBox="0 0 16 16"><path d="M10 3 5 8l5 5"/></svg>Bacheche</button>
       <div class="nav-right">
-        <div class="view-wrap">
+        <div class="view-wrap" hidden>
           <button class="icon-btn" type="button" id="view-btn" aria-label="Vista delle schede" aria-haspopup="menu" aria-expanded="false" title="Vista delle schede">
             <svg class="i" viewBox="0 0 16 16"><path d="M1.5 8s2.5-4.5 6.5-4.5S14.5 8 14.5 8 12 12.5 8 12.5 1.5 8 1.5 8z"/><circle cx="8" cy="8" r="2"/></svg>
           </button>
@@ -1193,7 +1194,7 @@ function cardHTML(c, col) {
   /* Un modulo nascosto (spunta tolta) non compare da nessuna parte, nemmeno la sua scadenza */
   const on = k => !c.modules || c.modules.includes(k);
   /* Vista essenziale: solo il titolo, più la scadenza quando è vicina o passata */
-  const full = state.view === 'full';
+  const full = true; /* per ora solo la vista completa: la scelta Essenziale/Completa è nascosta */
   const labs = full && on('labels') ? c.labels.map(labelOf).filter(Boolean) : [];
   let due = on('due') ? dueInfo(c.due, col.type === 'fatto') : null;
   if (!full && due && !due.cls) due = null;
